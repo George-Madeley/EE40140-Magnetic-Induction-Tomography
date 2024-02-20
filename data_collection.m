@@ -11,16 +11,40 @@ disp(camList);
 % Connect to Webcam
 cam = webcam('HD Pro Webcam C920');
 
+imId = 0;
+
 for imNum = 1 : 5
     % Take snapshot
     img = snapshot(cam);
     
     % Create filename
-    filename = sprintf(nametemplate, imNum);
+    filename = sprintf(nametemplate, imId);
     filename = fullfile(savepath, filename);
+
+    % Assume the file with the same name already exists. Check if a file
+    % with the same name acutally exists. If a file already exists with the
+    % same name, create a new name an repeat. Else, exist out of the while
+    % loop.
+    fileExist = true;
+    while fileExist
+        if isfile(filename)
+            % Change the file id
+            imId = imId + 1;
+
+            % Create filename
+            filename = sprintf(nametemplate, imId);
+            filename = fullfile(savepath, filename);
+        else
+            % A file does not exist therefore no overwrite will occur
+            fileExist = false;
+        end
+    end
 
     % Save image
     imwrite(img, filename);
+
+    % increment imId
+    imId = imId + 1;
 end
 
 % Disconnecting from Webcam and clearing variable

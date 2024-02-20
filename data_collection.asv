@@ -1,16 +1,41 @@
+% Setting Directory for snapshots
+savepath = 'D:\FYP\snapshots';
+
+% Creating naming pattern for images
+nametemplate = 'snapshot_%05d.png';
+
 % Getting then printing a list of available webcams
 camList = webcamlist;
 disp(camList);
 
 % Connect to Webcam
 cam = webcam('HD Pro Webcam C920');
-preview(cam);
 
-% Take snapshot
-img = snapshot(am);
-image(img);
+imId = 0;
 
-% Sa
+for imNum = 1 : 5
+    % Take snapshot
+    img = snapshot(cam);
+    
+    % Create filename
+    filename = sprintf(nametemplate, imId);
+    filename = fullfile(savepath, filename);
+
+    % Assume the file with the same name already exists. Check if a file
+    % with the same name acutally exists. If a file already exists with the
+    % same name, create a new name an repeat. Else, exist out of the while
+    % loop.
+    fileExist = true;
+    while fileExist
+        if ~isfile(filename)
+            imId = imId + 1;
+            file
+        end
+    end
+
+    % Save image
+    imwrite(img, filename);
+end
 
 % Disconnecting from Webcam and clearing variable
-Clear cam;
+clear cam;
