@@ -11,11 +11,12 @@ disp(camList);
 % Connect to Webcam
 cam = webcam('HD Pro Webcam C920');
 
-imId = 0;
-
 for imNum = 1 : 5
     % Take snapshot
     img = snapshot(cam);
+
+    % Create a random id for the image
+    imId = randi([0, 999999]);
     
     % Create filename
     filename = sprintf(nametemplate, imId);
@@ -29,7 +30,7 @@ for imNum = 1 : 5
     while fileExist
         if isfile(filename)
             % Change the file id
-            imId = imId + 1;
+            imId = randi([0, 999999]);
 
             % Create filename
             filename = sprintf(nametemplate, imId);
@@ -42,9 +43,6 @@ for imNum = 1 : 5
 
     % Save image
     imwrite(img, filename);
-
-    % increment imId
-    imId = imId + 1;
 end
 
 % Disconnecting from Webcam and clearing variable
