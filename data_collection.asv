@@ -1,19 +1,16 @@
-% Setting Directory for snapshots
-savepath = 'D:\FYP\snapshots';
-
 % Getting then printing a list of available webcams
 camList = webcamlist;
 disp(camList);
 
 % Connect to Webcam
 cam = webcam('HD Pro Webcam C920');
+preview(cam);
 
 % Take snapshot
-img = snapshot(cam);
+img = snapshot(am);
+image(img);
 
-% Save image
-filename = fullfile(savepath, "snapshot.png");
-imwrite(img, filename);
+% Sa
 
 % Disconnecting from Webcam and clearing variable
-clear cam;
+Clear cam;
