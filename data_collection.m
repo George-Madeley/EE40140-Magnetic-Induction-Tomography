@@ -11,13 +11,26 @@ disp(camList);
 % Connect to Webcam
 cam = webcam('HD Pro Webcam C920');
 
-for imNum = 1 : 5
+% Create an endless session
+endSession = false;
+
+while ~endSession
+
+    % Wait for a button or mouse press before continuing code execution
+    w = waitforbuttonpress;
+
+    % If the mouse has been clicked, end the current session.
+    if w == 0
+        endSession = true;
+        break;
+    end
+
     % Take snapshot
     img = snapshot(cam);
 
     % Create a random id for the image
     imId = randi([0, 999999]);
-    
+
     % Create filename
     filename = sprintf(nametemplate, imId);
     filename = fullfile(savepath, filename);
@@ -43,6 +56,8 @@ for imNum = 1 : 5
 
     % Save image
     imwrite(img, filename);
+
+    disp(filename);
 end
 
 % Disconnecting from Webcam and clearing variable
