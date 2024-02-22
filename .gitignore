@@ -165,3 +165,4 @@ scripts/data_collections/MIT_Multi_Frame.exe
 
 # Collection of iages used for training, testing, and validating the model
 images/
+scripts/data_collections/data.csv
