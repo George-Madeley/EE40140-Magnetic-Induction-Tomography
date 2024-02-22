@@ -1,4 +1,4 @@
-function filename = capture_images(savepath, cam)
+function filename = captureImages(savepath, cam)
     % Creating naming pattern for images
     nametemplate = 'snapshot_%05d.png';
 

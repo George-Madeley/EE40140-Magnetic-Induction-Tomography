@@ -1,4 +1,4 @@
-function [cam, webcamName] = cam_settings()
+function [cam, webcamName] = cameraSettings()
     % Getting then printing a list of available webcams
     camList = webcamlist;
     disp(camList);
