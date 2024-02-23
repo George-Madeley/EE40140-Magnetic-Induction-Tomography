@@ -162,7 +162,8 @@ cython_debug/
 # Files Created by Prof. Manuchehr Soleimani
 scripts/data_collections/MIT_Multi_Frame.c
 scripts/data_collections/MIT_Multi_Frame.exe
-
-# Collection of iages used for training, testing, and validating the model
-images/
 scripts/data_collections/data.csv
+input_data.csv
+
+# Collection of images used for training, testing, and validating the model
+images/
