@@ -4,9 +4,11 @@
         "Resolution": "640x480",
         "WhiteBalanceMode": "manual",
         "WhiteBalance": 4000,
-        "ExposureMode": "manual",
-        "Exposure": -4,
+        "ExposureMode": "auto",
+        "Exposure": -5,
         "FocusMode": "manual",
-        "Gain": 255
+        "Gain": 128,
+        "Contrast": 255,
+        "Zoom": 120
     }
 }
