@@ -23,6 +23,20 @@ function [cam, webcamName] = cameraSettings()
     % Display image
     preview(cam)
 
+    % Check for saved camera settings
+    if isfile("./cameraSettings.json")
+        cameraSettingsJSON = jsondecode(fileread("cameraSettings.json"));
+        if cameraSettingsJSON.Name == webcamName
+            camProperties = cameraSettingsJSON.Properties;
+            fields = fieldnames(camProperties);
+            for i = 1:length(fields)
+                key = fields{i};
+                value = camProperties.(key);
+                cam.(key) = value;
+            end
+        end
+    end
+
     % display webcam properties
     disp("Webcam Properties:")
     disp(cam)

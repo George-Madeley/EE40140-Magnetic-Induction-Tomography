@@ -1,0 +1,12 @@
+{
+    "Name": "HD Pro Webcam C920",
+    "Properties": {
+        "Resolution": "640x480",
+        "WhiteBalanceMode": "manual",
+        "WhiteBalance": 4000,
+        "ExposureMode": "manual",
+        "Exposure": -4,
+        "FocusMode": "manual",
+        "Gain": 255
+    }
+}
