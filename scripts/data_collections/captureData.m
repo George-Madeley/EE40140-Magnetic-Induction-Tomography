@@ -26,9 +26,16 @@ function captureData()
     % Create an endless session
     endSession = false;
 
+    % Set sensor properties
     frequency = 20000;
     gain = 7;
     avg = 3;
+
+    % Measure background readings
+    sensorData = zeros(120,1);
+    sensorData = sensorData + captureMultiFrames16(frequency,gain,avg);
+    bb = mean(sensorData, 2);
+    bb(bb > 2e4) = 0;
     
     while ~endSession
         % Wait for a button or mouse press before continuing code execution
@@ -44,7 +51,9 @@ function captureData()
         % Read data from sensors
         sensorData = zeros(120,1);
         sensorData = sensorData + captureMultiFrames16(frequency,gain,avg);
-        bb = mean(sensorData, 2);
+        cc = mean(sensorData, 2);
+        cc(cc > 2e4) = 0;
+        dv = (cc-bb) ./ 1;
 
         % capture the image
         filename = captureImages('..\..\images', cam);
@@ -52,8 +61,8 @@ function captureData()
         % create the row of data
         row = {filename 'square'};
         length = numel(row);
-        for i = 1:numel(bb)
-            row{i + length} = [string(bb(i))];
+        for i = 1:numel(dv)
+            row{i + length} = [string(dv(i))];
         end
         toc
 
