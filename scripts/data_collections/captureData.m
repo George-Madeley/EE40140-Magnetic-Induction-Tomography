@@ -47,26 +47,29 @@ function captureData()
             break;
         end
 
-        tic
-        % Read data from sensors
-        sensorData = zeros(120,1);
-        sensorData = sensorData + captureMultiFrames16(frequency,gain,avg);
-        cc = mean(sensorData, 2);
-        cc(cc > 2e4) = 0;
-        dv = (cc-bb) ./ 1;
-
-        % capture the image
-        filename = captureImages('..\..\images', cam);
-
-        % create the row of data
-        row = {filename 'square'};
-        length = numel(row);
-        for i = 1:numel(dv)
-            row{i + length} = [string(dv(i))];
+        for i = 1:5
+            tic
+            % Read data from sensors
+            sensorData = zeros(120,1);
+            sensorData = sensorData + captureMultiFrames16(frequency,gain,avg);
+            cc = mean(sensorData, 2);
+            cc(cc > 2e4) = 0;
+            dv = (cc-bb) ./ 1;
+    
+            % capture the image
+            filename = captureImages('..\..\images', cam);
+    
+            % create the row of data
+            row = {filename 'square'};
+            length = numel(row);
+            for i = 1:numel(dv)
+                row{i + length} = [string(dv(i))];
+            end
+            toc
+    
+            % Write the row of data to the CSV file
+            writecell(row, CSVfilename, 'WriteMode', 'append');
         end
-        toc
-
-        % Write the row of data to the CSV file
-        writecell(row, CSVfilename, 'WriteMode', 'append');
+        disp("NEXT!");
     end
 end
