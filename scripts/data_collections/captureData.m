@@ -7,7 +7,7 @@ function captureData()
     % headers
     if ~isfile(CSVfilename)
         prefix = 'sensor_';
-        headers = {'filepath' 'shape'};
+        headers = {'filepath' 'shape' 'sample'};
         length = numel(headers);
         N = 1:120;
         for i = 1:numel(N)
@@ -22,6 +22,14 @@ function captureData()
     if ~camExists
         [cam, ~] = cameraSettings();
     end
+    
+    % Ask for shape of object
+    disp("Enter Object Shape:");
+    shape = input(">?", "s");
+
+    % Ask for sample ID
+    disp("Enter Sample ID (i.e., A, B, C etc):")
+    sampleId = input(">?", "s");
 
     % Create an endless session
     endSession = false;
@@ -60,7 +68,7 @@ function captureData()
             filename = captureImages('..\..\images', cam);
     
             % create the row of data
-            row = {filename 'square'};
+            row = {filename shape sampleId};
             length = numel(row);
             for i = 1:numel(dv)
                 row{i + length} = [string(dv(i))];
