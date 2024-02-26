@@ -10,7 +10,7 @@ function filename = captureImages(savepath, cam)
 
     % Create filename
     filename = sprintf(nametemplate, imId);
-    filename = fullfile(savepath, filename);
+    filepath= fullfile(savepath, filename);
 
     % Assume the file with the same name already exists. Check if a file
     % with the same name acutally exists. If a file already exists with the
@@ -18,13 +18,13 @@ function filename = captureImages(savepath, cam)
     % loop.
     fileExist = true;
     while fileExist
-        if isfile(filename)
+        if isfile(filepath)
             % Change the file id
             imId = randi([0, 999999]);
 
             % Create filename
             filename = sprintf(nametemplate, imId);
-            filename = fullfile(savepath, filename);
+            filepath = fullfile(savepath, filename);
         else
             % A file does not exist therefore no overwrite will occur
             fileExist = false;
@@ -32,8 +32,8 @@ function filename = captureImages(savepath, cam)
     end
 
     % Save image
-    imwrite(img, filename);
+    imwrite(img, filepath);
 
-    disp(filename);
+    disp(filepath);
 end
 
