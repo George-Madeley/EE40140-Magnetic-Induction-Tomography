@@ -52,5 +52,9 @@ class ColourFiltering:
         # invert the reference image
         ref_image = ~ref_image
 
+        # Set the left and right sides of the image to 1
+        ref_image[:, :50] = 1
+        ref_image[:, -100:] = 1
+
         # Perform a elementwise OR operation on the image and the reference image
         return image | ref_image
