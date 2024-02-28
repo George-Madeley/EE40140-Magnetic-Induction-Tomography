@@ -7,6 +7,7 @@ class FrequencyFiltering():
     Class for applying linear filters to an image
     """
 
+    @staticmethod
     def applyFilter(image, filter_name, kernel_size, **kwargs):
         """
         Applies a linear filter to an image
@@ -74,7 +75,8 @@ class FrequencyFiltering():
         else:
             # If the filter name is not recognized, raise an error.
             raise Exception('Invalid filter name.')
-        
+    
+    @staticmethod    
     def calculateFrequencyDomainConvolution(image, kernel, padding='constant'):
         """
         Performs a convolution on an image using a kernel using the Fast Fourier
@@ -128,6 +130,7 @@ class FrequencyFiltering():
 
         return convolved_image
 
+    @staticmethod
     def getGaussianKernel(size):
         """
         Creates a Gaussian kernel of size (size x size) with standard deviation
@@ -157,6 +160,7 @@ class FrequencyFiltering():
         kernel /= np.sum(kernel)
         return kernel
 
+    @staticmethod
     def getBoxKernel(size):
         """
         Creates a box kernel of size (size x size)
@@ -171,6 +175,7 @@ class FrequencyFiltering():
         kernel /= np.sum(kernel)
         return kernel
 
+    @staticmethod
     def getButterworthLowPassFilter(size, cutoff, order):
         """
         Creates a Butterworth low pass filter of size (size x size) with cutoff
@@ -197,6 +202,7 @@ class FrequencyFiltering():
         kernel /= np.sum(kernel)
         return kernel
 
+    @staticmethod
     def getLowPassFilter(size, cutoff):
         """
         Creates a low pass filter of size (size x size) with cutoff frequency
