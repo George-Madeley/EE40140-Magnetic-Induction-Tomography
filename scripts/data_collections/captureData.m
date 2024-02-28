@@ -79,5 +79,6 @@ function captureData()
             writecell(row, CSVfilename, 'WriteMode', 'append');
         end
         disp("NEXT!");
+        beep;
     end
 end
