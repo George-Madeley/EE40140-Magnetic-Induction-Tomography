@@ -5,7 +5,7 @@ import pandas as pd
 
 from colourFiltering import toGreyscale, toBinary, removeBackground
 from frequencyFiltering import lowPassFilter
-from MorphologicalFiltering import closing
+from morphologicalFiltering import closing
 
 def main():
     """
@@ -14,7 +14,7 @@ def main():
     The resulting overlapped image is displayed using matplotlib.
     """
     # Get the image directory
-    image_dir = "./images"
+    imageDirectory = "./images"
 
     # load data from csv with headers
     df = pd.read_csv('./input_data.csv')
@@ -24,35 +24,38 @@ def main():
         index = np.random.randint(0, len(df))
 
         # get the filename of a random record
-        image_file = df.iloc[index]['filepath']
-        image_path = os.path.join(image_dir, image_file)
+        imageFilename = df.iloc[index]['filepath']
+        imagePath = os.path.join(imageDirectory, imageFilename)
 
         # get image from file
-        rgb_img = np.array(plt.imread(image_path))
+        image = np.array(plt.imread(imagePath))
 
         # convert to greyscale
-        bw_img = toGreyscale(rgb_img)
+        image = toGreyscale(image)
 
         # convert to binary
-        bw_img = toBinary(bw_img, 0.5)
+        image = toBinary(image, 0.5)
 
         # remove background
-        bw_img = removeBackground(bw_img)
+        image = removeBackground(image)
 
         # apply low pass filter
-        bw_img = lowPassFilter(bw_img, 5)
+        image = lowPassFilter(image, 5)
+
+        # convert to binary
+        image = toBinary(image, 0.5)
 
         # apply closing
-        bw_img = closing(bw_img, 5)
+        image = closing(image, 5)
 
         fig, ax = plt.subplots()
-        ax.imshow(bw_img, cmap='gray')
+        ax.imshow(image, cmap='gray')
 
         plt.show()
 
 
     fig, ax = plt.subplots()
-    ax.imshow(bw_img, cmap='gray')
+    ax.imshow(image, cmap='gray')
 
     plt.show()
 
