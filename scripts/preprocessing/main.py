@@ -5,6 +5,7 @@ import pandas as pd
 
 from colourFiltering import toGreyscale, toBinary, removeBackground
 from frequencyFiltering import lowPassFilter
+from MorphologicalFiltering import closing
 
 def main():
     """
@@ -40,6 +41,9 @@ def main():
 
         # apply low pass filter
         bw_img = lowPassFilter(bw_img, 5)
+
+        # apply closing
+        bw_img = closing(bw_img, 5)
 
         fig, ax = plt.subplots()
         ax.imshow(bw_img, cmap='gray')
