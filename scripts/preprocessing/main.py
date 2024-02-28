@@ -46,7 +46,7 @@ def main():
         image = toBinary(image, 0.5)
 
         # apply closing
-        image = closing(image, 5)
+        image = closing(image)
 
         fig, ax = plt.subplots()
         ax.imshow(image, cmap='gray')
