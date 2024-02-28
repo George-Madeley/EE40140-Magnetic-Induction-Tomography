@@ -6,6 +6,10 @@ from colourFiltering import ColourFiltering
 from frequencyFiltering import FrequencyFiltering
 from morphologicalFiltering import MorphologicalFiltering
 
+def downSample(image, factor):
+    downsampled_image = image[::factor, ::factor]
+    return downsampled_image
+
 def Preprocess(imageFilename):
     imageDirectory = './images'
 
