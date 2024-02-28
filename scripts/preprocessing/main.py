@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from colourFiltering import toGreyscale
+from colourFiltering import toGreyscale, toBinary
 
 def main():
     """
@@ -30,6 +30,9 @@ def main():
 
         # convert to greyscale
         bw_img = toGreyscale(rgb_img)
+
+        # convert to binary
+        bw_img = toBinary(bw_img, 0.5)
 
         fig, ax = plt.subplots()
         ax.imshow(bw_img, cmap='gray')
