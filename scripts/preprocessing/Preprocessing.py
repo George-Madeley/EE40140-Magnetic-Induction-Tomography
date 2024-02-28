@@ -47,6 +47,15 @@ def preprocessAllImages():
     # load in input_data.csv
     df = pd.read_csv('input_data.csv')
 
+    downSampleFactor = 8
+    newWidth = 640 // downSampleFactor
+    newHeight = 480 // downSampleFactor
+
+    directory = f'./images/processed/{newHeight}x{newWidth}'
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     for i, row in df.iterrows():
         # Get the filename
         imageFilename = row['filepath']
@@ -57,8 +66,8 @@ def preprocessAllImages():
         image = Preprocess(imageFilename, downsampleFactor=downSampleFactor)
 
         # save image
-        savePath = os.path.join('./images(60x80)', f'{imageFilename}.npy')
-        np.save(savePath, image)
+        savePath = os.path.join(directory, imageFilename)
+        plt.imsave(savePath, image, cmap='gray')
 
 if __name__ == '__main__':
     preprocessAllImages()
