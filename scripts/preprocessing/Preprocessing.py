@@ -11,8 +11,8 @@ def downSample(image, factor):
     downsampled_image = image[::factor, ::factor]
     return downsampled_image
 
-def Preprocess(imageFilename):
-    imageDirectory = './images'
+def Preprocess(imageFilename, kernelSize=5, cutoff=0.5, downsampleFactor=1):
+    imageDirectory = './images/original'
 
     # get the filename
     imagePath = os.path.join(imageDirectory, imageFilename)
@@ -24,22 +24,22 @@ def Preprocess(imageFilename):
     image = ColourFiltering.toGreyscale(image)
 
     # convert to binary
-    image = ColourFiltering.toBinary(image, 0.5)
+    image = ColourFiltering.toBinary(image, cutoff)
 
     # remove background
     image = ColourFiltering.removeBackground(image)
 
     # apply low pass filter
-    image = FrequencyFiltering.applyFilter(image, 'low_pass', 5, cutoff=50.0)
+    image = FrequencyFiltering.applyFilter(image, 'low_pass', kernelSize)
 
     # convert to binary
-    image = ColourFiltering.toBinary(image, 0.5)
+    image = ColourFiltering.toBinary(image, cutoff)
 
     # apply closing
-    image = MorphologicalFiltering.closing(image, 5)
+    image = MorphologicalFiltering.closing(image, kernelSize)
 
     # downsample
-    image = downSample(image, 8)
+    image = downSample(image, downsampleFactor)
 
     return image
 
@@ -54,10 +54,7 @@ def preprocessAllImages():
         print(f'Processing image {imageFilename}')
 
         # Preprocess the image
-        image = Preprocess(imageFilename)
-
-        # get file name without extension
-        imageFilename = os.path.splitext(imageFilename)[0]
+        image = Preprocess(imageFilename, downsampleFactor=downSampleFactor)
 
         # save image
         savePath = os.path.join('./images(60x80)', f'{imageFilename}.npy')
