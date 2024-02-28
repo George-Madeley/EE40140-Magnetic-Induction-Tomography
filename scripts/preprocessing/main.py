@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from colourFiltering import toGreyscale, toBinary, removeBackground
+from frequencyFiltering import lowPassFilter
 
 def main():
     """
@@ -36,6 +37,9 @@ def main():
 
         # remove background
         bw_img = removeBackground(bw_img)
+
+        # apply low pass filter
+        bw_img = lowPassFilter(bw_img, 5)
 
         fig, ax = plt.subplots()
         ax.imshow(bw_img, cmap='gray')
