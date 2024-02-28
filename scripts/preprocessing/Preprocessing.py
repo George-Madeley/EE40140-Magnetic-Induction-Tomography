@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from colourFiltering import ColourFiltering
 from frequencyFiltering import FrequencyFiltering
@@ -36,3 +37,31 @@ def Preprocess(imageFilename):
 
     # apply closing
     image = MorphologicalFiltering.closing(image, 5)
+
+    # downsample
+    image = downSample(image, 8)
+
+    return image
+
+def preprocessAllImages():
+    # load in input_data.csv
+    df = pd.read_csv('input_data.csv')
+
+    for i, row in df.iterrows():
+        # Get the filename
+        imageFilename = row['filepath']
+
+        print(f'Processing image {imageFilename}')
+
+        # Preprocess the image
+        image = Preprocess(imageFilename)
+
+        # get file name without extension
+        imageFilename = os.path.splitext(imageFilename)[0]
+
+        # save image
+        savePath = os.path.join('./images(60x80)', f'{imageFilename}.npy')
+        np.save(savePath, image)
+
+if __name__ == '__main__':
+    preprocessAllImages()
