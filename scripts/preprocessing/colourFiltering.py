@@ -40,7 +40,7 @@ class ColourFiltering:
         :return: the image with the background removed (numpy array)
         """
         # Get the reference image
-        ref_image_filepath = "./images/snapshot_618423.png"
+        ref_image_filepath = "./images/bg.png"
         ref_image = plt.imread(ref_image_filepath)
 
         # Convert the reference image to greyscale
