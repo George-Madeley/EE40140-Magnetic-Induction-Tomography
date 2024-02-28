@@ -22,3 +22,27 @@ def toBinary(image, threshold):
     """
     
     return image > threshold
+
+def removeBackground(image):
+    """
+    Remove the background from the image using the reference image
+    
+    :param image: the image to remove the background from (numpy array)
+
+    :return: the image with the background removed (numpy array)
+    """
+    # Get the reference image
+    ref_image_filepath = "./images/snapshot_618423.png"
+    ref_image = plt.imread(ref_image_filepath)
+
+    # Convert the reference image to greyscale
+    ref_image = toGreyscale(ref_image)
+
+    # Convert the reference image to binary
+    ref_image = toBinary(ref_image, 0.5)
+
+    # invert the reference image
+    ref_image = ~ref_image
+
+    # Perform a elementwise OR operation on the image and the reference image
+    return image | ref_image

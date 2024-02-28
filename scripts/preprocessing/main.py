@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from colourFiltering import toGreyscale, toBinary
+from colourFiltering import toGreyscale, toBinary, removeBackground
 
 def main():
     """
@@ -33,6 +33,9 @@ def main():
 
         # convert to binary
         bw_img = toBinary(bw_img, 0.5)
+
+        # remove background
+        bw_img = removeBackground(bw_img)
 
         fig, ax = plt.subplots()
         ax.imshow(bw_img, cmap='gray')
