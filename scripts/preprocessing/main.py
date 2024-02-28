@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from colourFiltering import toGreyscale, toBinary, removeBackground
-from frequencyFiltering import lowPassFilter
+from frequencyFiltering import FrequencyFiltering
 from morphologicalFiltering import closing
 
 def main():
@@ -40,7 +40,7 @@ def main():
         image = removeBackground(image)
 
         # apply low pass filter
-        image = lowPassFilter(image, 5)
+        image = FrequencyFiltering.applyFilter(image, 'low_pass', 5, cutoff=50.0)
 
         # convert to binary
         image = toBinary(image, 0.5)
