@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from colourFiltering import toGreyscale, toBinary, removeBackground
+from colourFiltering import ColourFiltering
 from frequencyFiltering import FrequencyFiltering
-from morphologicalFiltering import closing
+from morphologicalFiltering import MorphologicalFiltering
 
 def main():
     """
@@ -31,22 +31,22 @@ def main():
         image = np.array(plt.imread(imagePath))
 
         # convert to greyscale
-        image = toGreyscale(image)
+        image = ColourFiltering.toGreyscale(image)
 
         # convert to binary
-        image = toBinary(image, 0.5)
+        image = ColourFiltering.toBinary(image, 0.5)
 
         # remove background
-        image = removeBackground(image)
+        image = ColourFiltering.removeBackground(image)
 
         # apply low pass filter
         image = FrequencyFiltering.applyFilter(image, 'low_pass', 5, cutoff=50.0)
 
         # convert to binary
-        image = toBinary(image, 0.5)
+        image = ColourFiltering.toBinary(image, 0.5)
 
         # apply closing
-        image = closing(image)
+        image = MorphologicalFiltering.closing(image, 5)
 
         fig, ax = plt.subplots()
         ax.imshow(image, cmap='gray')
