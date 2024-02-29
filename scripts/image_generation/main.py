@@ -5,6 +5,11 @@ import matplotlib.pyplot as plt
 import os
 
 def main():
+    
+    # Define the approximations for 0 and 1
+    oneApprox = 0.99
+    zeroApprox = 0.01
+
     # load in input_data.csv
     df = pd.read_csv('input_data.csv')
 
@@ -24,6 +29,14 @@ def main():
 
         # Average the four channels
         image = np.mean(image, axis=2)
+
+        # Find all the zero values and replace them with 0.01
+        zero_values = image == 0
+        image[zero_values] = zeroApprox
+
+        # Find all the one values nd replace them with 0.99
+        one_values = image == 1
+        image[one_values] = oneApprox
 
         # Add the image to the outputImages array
         outputImages[i] = image
