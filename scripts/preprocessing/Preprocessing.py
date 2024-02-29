@@ -32,6 +32,9 @@ def Preprocess(bb_filename, cc_filename, kernelSize=5, cutoff=0.5, downsampleFac
     # convert to binary
     image = ColourFiltering.toBinary(image, cutoff)
 
+    # apply opening
+    image = MorphologicalFiltering.opening(image, kernelSize)
+
     # apply closing
     image = MorphologicalFiltering.closing(image, kernelSize)
 
