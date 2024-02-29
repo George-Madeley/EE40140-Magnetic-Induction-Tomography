@@ -4,11 +4,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-def main():
-    
-    # Define the approximations for 0 and 1
-    oneApprox = 0.99
-    zeroApprox = 0.01
+def main(downScaleFactor=1, approximations=(0.01, 0.99)):
+    # Define the original width and height
+    originalWidth = 480
+    originalHeight = 640
+
+    # Define the new width and height
+    newWidth = originalWidth // downScaleFactor
+    newHeight = originalHeight // downScaleFactor
 
     # load in input_data.csv
     df = pd.read_csv('input_data.csv')
@@ -26,7 +29,7 @@ def main():
         # Get the filename
         imageFilename = row['filepath']
         
-        imageFilePath = os.path.join('./images/processed/60x80', imageFilename)
+        imageFilePath = os.path.join(f'./images/processed/{newHeight}x{newWidth}', imageFilename)
 
         # Read the .png file
         image = plt.imread(imageFilePath)
@@ -36,11 +39,11 @@ def main():
 
         # Find all the zero values and replace them with 0.01
         zero_values = image == 0
-        image[zero_values] = zeroApprox
+        image[zero_values] = approximations[0]
 
         # Find all the one values nd replace them with 0.99
         one_values = image == 1
-        image[one_values] = oneApprox
+        image[one_values] = approximations[1]
 
         # Add the image to the outputImages array
         outputImages[i] = image
@@ -52,8 +55,8 @@ def main():
         tf.keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu'),
         tf.keras.layers.Conv1D(filters=64, kernel_size=3, activation='relu'),
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(60 * 80, activation='sigmoid'),
-        tf.keras.layers.Reshape((60, 80))
+        tf.keras.layers.Dense(newHeight * newWidth, activation='sigmoid'),
+        tf.keras.layers.Reshape((newHeight, newWidth))
     ])
 
     # Compile the model
