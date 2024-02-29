@@ -56,7 +56,7 @@ function captureData()
     bb(bb > 2e4) = 0;
 
     % capture the image
-    bb_filename = captureImages('..\..\images', cam);
+    bb_filename = captureImages('..\..\images\original', cam);
     
     while ~endSession
         % Wait for a button or mouse press before continuing code execution
