@@ -1,13 +1,23 @@
 function captureData()
     % CSV filepath
     CSVfilepath = 'C:\Users\Georg\OneDrive\Documents\Education\University\Semester 8\EE40150 Final Year Project\Code';
-    CSVfilename = fullfile(CSVfilepath, 'input_data.csv');
+    CSVfilename = fullfile(CSVfilepath, 'data.csv');
 
     % If the CSV file does not exist, create a new file and write the
     % headers
     if ~isfile(CSVfilename)
-        prefix = 'sensor_';
-        headers = {'filepath' 'shape' 'sample'};
+        headers = {'bb_filename' 'cc_filename' 'shape' 'sample' 'gain' 'avg' 'freq' 'rtime' 'dtime'};
+
+        % Create headers for the background readings
+        prefix = 'bb_';
+        length = numel(headers);
+        N = 1:120;
+        for i = 1:numel(N)
+            headers{i + length} = [prefix int2str(N(i))];
+        end
+
+        % Create headers for the actual readings
+        prefix = 'cc_';
         length = numel(headers);
         N = 1:120;
         for i = 1:numel(N)
@@ -37,13 +47,16 @@ function captureData()
     % Set sensor properties
     frequency = 20000;
     gain = 7;
-    avg = 3;
+    avg = 5;
 
     % Measure background readings
     sensorData = zeros(120,1);
-    sensorData = sensorData + captureMultiFrames16(frequency,gain,avg);
+    sensorData = sensorData + captureMultiFrames16(frequency, gain, avg);
     bb = mean(sensorData, 2);
     bb(bb > 2e4) = 0;
+
+    % capture the image
+    bb_filename = captureImages('..\..\images', cam);
     
     while ~endSession
         % Wait for a button or mouse press before continuing code execution
@@ -56,24 +69,35 @@ function captureData()
         end
 
         for i = 1:5
-            tic
+            % start time
+            rtime = tic;
+
             % Read data from sensors
             sensorData = zeros(120,1);
             sensorData = sensorData + captureMultiFrames16(frequency,gain,avg);
             cc = mean(sensorData, 2);
             cc(cc > 2e4) = 0;
-            dv = (cc-bb) ./ 1;
     
             % capture the image
-            filename = captureImages('..\..\images', cam);
+            cc_filename = captureImages('..\..\images\original', cam);
+
+            % End time
+            dtime = toc;
     
             % create the row of data
-            row = {filename shape sampleId};
+            row = {bb_filename cc_filename shape sampleId gain avg frequency rtime dtime};
+
+            % Add background data to row
             length = numel(row);
-            for i = 1:numel(dv)
-                row{i + length} = [string(dv(i))];
+            for i = 1:numel(bb)
+                row{i + length} = [string(bb(i))];
             end
-            toc
+
+            % Add sample data to row
+            length = numel(row);
+            for i = 1:numel(cc)
+                row{i + length} = [string(cc(i))];
+            end
     
             % Write the row of data to the CSV file
             writecell(row, CSVfilename, 'WriteMode', 'append');
