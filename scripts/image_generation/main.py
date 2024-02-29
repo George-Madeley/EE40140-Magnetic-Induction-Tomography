@@ -13,8 +13,12 @@ def main():
     # load in input_data.csv
     df = pd.read_csv('input_data.csv')
 
+    # Get the voltage data
     column_names = df.filter(regex='sensor_\d+').columns
     voltages = df[column_names].values
+
+    # Normalize the voltages by dividing by 2e4
+    voltages = voltages / 2e4
 
     outputImages = np.zeros((len(df), 60, 80))
 
