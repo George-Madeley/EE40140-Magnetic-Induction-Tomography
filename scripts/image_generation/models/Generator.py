@@ -36,16 +36,15 @@ class Generator(nn.Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        """
-        Forward pass of the generator network.
+            """
+            Forward pass of the Generator model.
 
-        Args:
-            x (torch.Tensor): Input tensor of shape (batch_size, 100).
+            Args:
+                x (Tensor): Input tensor.
 
-        Returns:
-            torch.Tensor: Output tensor of shape (batch_size, 784).
-
-        """
-        output = self.model(x)
-        output = output.view(x.size(0), 1, 60, 80)
-        return output
+            Returns:
+                Tensor: Output tensor after passing through the model.
+            """
+            output = self.model(x)
+            output = output.view(x.size(0), 1, 60, 80)
+            return output

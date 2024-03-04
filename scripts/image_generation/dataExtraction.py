@@ -118,7 +118,7 @@ def getVoltages(df: DataFrame) -> torch.Tensor:
     # combine the two lists and return the result
     column_names = bb_names.append(cc_names)
 
-    voltages = torch.tensor(df[column_names].values)
+    voltages = torch.from_numpy(df[column_names].values).float()
 
     # Normalize the voltages by dividing by 2e4
     voltages = voltages / 2e4

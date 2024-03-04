@@ -1,97 +1,139 @@
-import tensorflow as tf
-import numpy as np
+import torch
+from torch.optim import Adam
+from torch import nn
+
 import pandas as pd
+
 import matplotlib.pyplot as plt
-import os
+
+
+from dataExtraction import dataExtraction
+from models.Discriminator import Discriminator
+from models.Generator import Generator
+
 
 def main(downScaleFactor=1, approximations=(0.01, 0.99)):
-    # Define the original width and height
-    originalWidth = 480
-    originalHeight = 640
+    # check if cuda is available for training on GPU
+    device = ""
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
 
-    # Define the new width and height
-    newWidth = originalWidth // downScaleFactor
-    newHeight = originalHeight // downScaleFactor
+    # define the batch size
+    batchSize = 50
 
-    # load in input_data.csv
-    df = pd.read_csv('data.csv')
+    # calculate the number of batches
+    data = pd.read_csv("data.csv")
+    numData = len(data)
+    numBatches = numData // batchSize
 
-    # Get the background voltage and the sensor voltage columns
-    bb_names = df.filter(regex='bb_\d+').columns
-    cc_names = df.filter(regex='cc_\d+').columns
-    # combine the two lists and return the result
-    column_names = bb_names.append(cc_names)
+    randomSampleIndeces = [1342, 941, 119, 823, 607, 414]
 
-    voltages = df[column_names].values
+    # extract data
+    trainLoader = dataExtraction(downScaleFactor, approximations)
 
-    # get the number of columns in the voltages array
-    num_columns = voltages.shape[1]
+    width = 640 // downScaleFactor
+    height = 480 // downScaleFactor
+    
+    numInputs = 240
 
-    # Normalize the voltages by dividing by 2e4
-    voltages = voltages / 2e4
+    
+    # define the hyperparameters
+    learningRate = 0.001
+    numEpochs = 1000
+    lossFunctionDiscriminator = nn.BCELoss()
+    lossFunctionGenerator = nn.L1Loss()
 
-    outputImages = np.zeros((len(df), 60, 80))
+    # Create an instance of the discriminator and generator
+    discriminator = Discriminator().to(device)
+    generator = Generator().to(device)
 
-    for i, row in df.iterrows():
-        # Get the filename
-        imageFilename = row['cc_filename']
+    # define the discriminator and generator optimizers
+    optimizerDiscriminator = Adam(discriminator.parameters(), lr=learningRate)
+    optimizerGenerator = Adam(generator.parameters(), lr=learningRate)
+
+    for epoch in range(numEpochs):
+        for n, (realSamples, latentSpaceSamples) in enumerate(trainLoader):
+            # Data for training the discriminator
+
+            # Get the real samples and send to device
+            realSamples = realSamples.to(
+                device=device
+            )
+
+            # Create the labels which are later used as input for the BCE loss
+            # function for the discriminator and send to device
+            realSampleLabels = torch.ones((batchSize, 1)).to(
+                device=device
+            )
+
+            # Send the latent samples to the device
+            latentSpaceSamples = latentSpaceSamples.to(
+                device=device
+            )
+
+            # Generate the fake samples from the latent samples
+            generatedSamples = generator(latentSpaceSamples)
+
+            # Create the labels for the fake samples
+            generatedSampleLabels = torch.zeros((batchSize, 1)).to(
+                device=device
+            )
+
+            # Combine the real and fake samples
+            allSamples = torch.cat((realSamples, generatedSamples))
+            allSampleLabels = torch.cat(
+                (realSampleLabels, generatedSampleLabels)
+            )
+
+            # Training the discriminator
+            discriminator.zero_grad()
+            outputDiscriminator = discriminator(allSamples)
+            lossDiscriminator = lossFunctionDiscriminator(
+                outputDiscriminator, allSampleLabels
+            )
+            lossDiscriminator.backward()
+            optimizerDiscriminator.step()
+
+            # Send the latent samples to the device
+            latentSpaceSamples = latentSpaceSamples.to(
+                device=device
+            )
+
+            # Training the generator
+            generator.zero_grad()
+            generatedSamples = generator(latentSpaceSamples)
+            lossGenerator = lossFunctionGenerator(
+                generatedSamples, realSamples
+            )
+            lossGenerator.backward()
+            optimizerGenerator.step()
+
+            # Show loss
+            if n == numBatches - 1:
+                print(f"Epoch: {epoch} Loss D.: {lossDiscriminator}")
+                print(f"Epoch: {epoch} Loss G.: {lossGenerator}")
+                print("--------------------------------------------------")
+
+        # Generate images using random latent samples
+        if epoch == 0:
+            fixedLatentSamples = trainLoader.dataset.tensors[1][randomSampleIndeces].to(device)
+        generatedImages = generator(fixedLatentSamples)
+        generatedImages = generatedImages.detach().cpu()
+
+        # Plot and save the generated images
+        fig, axs = plt.subplots(2, 3, figsize=(8, 6))
+        for i, ax in enumerate(axs.flatten()):
+            ax.imshow(generatedImages[i][0], cmap='gray')
+            ax.axis('off')
+        plt.tight_layout()
         
-        imageFilePath = os.path.join(f'./images/processed/{newWidth}x{newHeight}', imageFilename)
-
-        # Read the .png file
-        image = plt.imread(imageFilePath)
-
-        # Average the first three channels
-        image = np.mean(image[:, :, :3], axis=2)
-
-        # Find all the zero values and replace them with 0.01
-        zero_values = image == 0
-        image[zero_values] = approximations[0]
-
-        # Find all the one values nd replace them with 0.99
-        one_values = image == 1
-        image[one_values] = approximations[1]
-
-        # Add the image to the outputImages array
-        outputImages[i] = image
-
-
-    # Define the model architecture
-    model = tf.keras.Sequential([
-        tf.keras.layers.Reshape((num_columns, 1), input_shape=(num_columns,)),
-        tf.keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu'),
-        tf.keras.layers.Conv1D(filters=64, kernel_size=3, activation='relu'),
-        tf.keras.layers.Conv1D(filters=128, kernel_size=3, activation='relu'),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(newHeight * newWidth, activation='sigmoid'),
-        tf.keras.layers.Reshape((newWidth, newHeight))
-    ])
-
-    # Compile the model
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-    # Train the model
-    model.fit(
-        voltages,
-        outputImages,
-        epochs=1,
-        verbose=1,
-        validation_split=0.2,
-        batch_size=10
-    )
-
-    # Test the model
-    test_loss = model.evaluate(voltages, outputImages)
-    print(f'Test loss: {test_loss}')
-
-    # run the model using the last row of the input data
-    test_image = voltages[-1]
-    test_image = test_image.reshape(1, num_columns)
-    predicted_image = model.predict(test_image)
-    plt.imshow(predicted_image[0], cmap='gray')
-    plt.show()
-
-
+        # title the plot
+        plt.suptitle(f"Epoch {epoch}")
+        # save the plot
+        plt.savefig(f"./images/epochs/epoch_{str(epoch).zfill(3)}.png")
+        plt.close()
 
 if __name__ == '__main__':
     main(downScaleFactor=8, approximations=(0.01, 0.99))
