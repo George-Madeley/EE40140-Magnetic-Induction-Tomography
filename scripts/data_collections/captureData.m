@@ -1,7 +1,22 @@
 function captureData()
+    % Check if the camera object exists. If it does not, a connection to
+    % the camera needs to be created.
+    camExists = exist('cam', 'var');
+    if ~camExists
+        [cam, ~] = cameraSettings();
+    end
+    
+    % Ask for shape of object
+    disp("Enter Object Shape:");
+    shape = input(">?", "s");
+
+    % Ask for sample ID
+    disp("Enter Sample ID (i.e., A, B, C etc):")
+    sampleId = input(">?", "s");
+    
     % CSV filepath
     CSVfilepath = 'C:\Users\Georg\OneDrive\Documents\Education\University\Semester 8\EE40150 Final Year Project\Code';
-    CSVfilename = fullfile(CSVfilepath, 'data.csv');
+    CSVfilename = fullfile(CSVfilepath, ['data_sample-' sampleId '.csv']);
 
     % If the CSV file does not exist, create a new file and write the
     % headers
@@ -25,21 +40,6 @@ function captureData()
         end
         writecell(headers, CSVfilename);
     end
-
-    % Check if the camera object exists. If it does not, a connection to
-    % the camera needs to be created.
-    camExists = exist('cam', 'var');
-    if ~camExists
-        [cam, ~] = cameraSettings();
-    end
-    
-    % Ask for shape of object
-    disp("Enter Object Shape:");
-    shape = input(">?", "s");
-
-    % Ask for sample ID
-    disp("Enter Sample ID (i.e., A, B, C etc):")
-    sampleId = input(">?", "s");
 
     % Create an endless session
     endSession = false;
