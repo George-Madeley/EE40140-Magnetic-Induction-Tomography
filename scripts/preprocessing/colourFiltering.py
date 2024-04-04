@@ -57,3 +57,8 @@ class ColourFiltering:
 
         # Perform a elementwise OR operation on the image and the reference image
         return image | ref_image
+    
+    @staticmethod
+    def downSample(image, factor):
+        downsampled_image = image[::factor, ::factor]
+        return downsampled_image

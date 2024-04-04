@@ -1,16 +1,67 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from colourFiltering import ColourFiltering
 from frequencyFiltering import FrequencyFiltering
 from morphologicalFiltering import MorphologicalFiltering
 from cleanUp import cleanUp
 
-def downSample(image, factor):
-    downsampled_image = image[::factor, ::factor]
-    return downsampled_image
+def preprocessAllImages():
+    # load in the dataset
+    df = cleanUp.main()
+
+    imageWidth = 640
+    imageHeight = 480
+    commonFactors = getCommonFactors(imageWidth, imageHeight)
+
+    for idx in range(len(commonFactors)):
+        factor = commonFactors[idx]
+        nextFactor = commonFactors[idx + 1] if idx + 1 < len(commonFactors) else None
+
+        # If the next factor directory exists, then the images have already been
+        # processed for this factor. Skip to the next factor
+        if nextFactor is not None:
+            newWidth = imageWidth // nextFactor
+            newHeight = imageHeight // nextFactor
+            directory = os.path.join(os.getcwd(), 'images', 'processed', f'{newHeight}x{newWidth}')
+
+            if os.path.exists(directory):
+                continue
+
+        print(f'Processing images with factor {factor}')
+
+        newWidth = imageWidth // factor
+        newHeight = imageHeight // factor
+
+        directory = os.path.join(os.getcwd(), 'images', 'processed', f'{newHeight}x{newWidth}')
+        os.makedirs(directory, exist_ok=True)
+
+        for i, row in df.iterrows():
+            # Get the filename
+            bb_filename = row['bb_filename']
+            cc_filename = row['cc_filename']
+            sample = row['sample']
+
+            savePath = os.path.join(directory, cc_filename)
+
+            if os.path.exists(savePath):
+                continue
+
+            print(f'Processing image {cc_filename} to {newHeight}x{newWidth} sample: {sample}, i: {i}')
+
+            # Preprocess the image
+            image = Preprocess(bb_filename, cc_filename, downsampleFactor=factor)
+
+            # save image
+            plt.imsave(savePath, image, cmap='gray')
+
+def getCommonFactors(a, b):
+    factors = []
+    for i in range(1, min(a, b) + 1):
+        if a % i == 0 and b % i == 0:
+            factors.append(i)
+    return factors
 
 def Preprocess(bb_filename, cc_filename, kernelSize=5, cutoff=0.5, downsampleFactor=1):
     imageDirectory = './images/original'
@@ -40,36 +91,9 @@ def Preprocess(bb_filename, cc_filename, kernelSize=5, cutoff=0.5, downsampleFac
     image = MorphologicalFiltering.closing(image, kernelSize)
 
     # downsample
-    image = downSample(image, downsampleFactor)
+    image = ColourFiltering.downSample(image, downsampleFactor)
 
     return image
-
-def preprocessAllImages():
-    # load in the dataset
-    df = cleanUp.main
-
-    downSampleFactor = 8
-    newWidth = 640 // downSampleFactor
-    newHeight = 480 // downSampleFactor
-
-    directory = f'./images/processed/{newHeight}x{newWidth}'
-
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    for i, row in df.iterrows():
-        # Get the filename
-        bb_filename = row['bb_filename']
-        cc_filename = row['cc_filename']
-
-        print(f'Processing image {cc_filename}')
-
-        # Preprocess the image
-        image = Preprocess(bb_filename, cc_filename, downsampleFactor=downSampleFactor)
-
-        # save image
-        savePath = os.path.join(directory, cc_filename)
-        plt.imsave(savePath, image, cmap='gray')
 
 if __name__ == '__main__':
     preprocessAllImages()
