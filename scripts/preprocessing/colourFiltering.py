@@ -31,7 +31,7 @@ class ColourFiltering:
         return image > threshold
 
     @staticmethod
-    def removeBackground(image):
+    def removeBackground(image, ref_image_filepath):
         """
         Remove the background from the image using the reference image
         
@@ -40,7 +40,6 @@ class ColourFiltering:
         :return: the image with the background removed (numpy array)
         """
         # Get the reference image
-        ref_image_filepath = "./images/bg.png"
         ref_image = plt.imread(ref_image_filepath)
 
         # Convert the reference image to greyscale

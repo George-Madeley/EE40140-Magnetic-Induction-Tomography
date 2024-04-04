@@ -6,16 +6,17 @@ import pandas as pd
 from colourFiltering import ColourFiltering
 from frequencyFiltering import FrequencyFiltering
 from morphologicalFiltering import MorphologicalFiltering
+from cleanUp import cleanUp
 
 def downSample(image, factor):
     downsampled_image = image[::factor, ::factor]
     return downsampled_image
 
-def Preprocess(imageFilename, kernelSize=5, cutoff=0.5, downsampleFactor=1):
+def Preprocess(bb_filename, cc_filename, kernelSize=5, cutoff=0.5, downsampleFactor=1):
     imageDirectory = './images/original'
 
     # get the filename
-    imagePath = os.path.join(imageDirectory, imageFilename)
+    imagePath = os.path.join(imageDirectory, cc_filename)
 
     # get image from file
     image = np.array(plt.imread(imagePath))
@@ -27,13 +28,13 @@ def Preprocess(imageFilename, kernelSize=5, cutoff=0.5, downsampleFactor=1):
     image = ColourFiltering.toBinary(image, cutoff)
 
     # remove background
-    image = ColourFiltering.removeBackground(image)
-
-    # apply low pass filter
-    image = FrequencyFiltering.applyFilter(image, 'low_pass', kernelSize)
+    image = ColourFiltering.removeBackground(image, f'{imageDirectory}/{bb_filename}')
 
     # convert to binary
     image = ColourFiltering.toBinary(image, cutoff)
+
+    # apply opening
+    image = MorphologicalFiltering.opening(image, kernelSize)
 
     # apply closing
     image = MorphologicalFiltering.closing(image, kernelSize)
@@ -44,8 +45,8 @@ def Preprocess(imageFilename, kernelSize=5, cutoff=0.5, downsampleFactor=1):
     return image
 
 def preprocessAllImages():
-    # load in input_data.csv
-    df = pd.read_csv('input_data.csv')
+    # load in the dataset
+    df = cleanUp.main
 
     downSampleFactor = 8
     newWidth = 640 // downSampleFactor
@@ -58,15 +59,16 @@ def preprocessAllImages():
 
     for i, row in df.iterrows():
         # Get the filename
-        imageFilename = row['filepath']
+        bb_filename = row['bb_filename']
+        cc_filename = row['cc_filename']
 
-        print(f'Processing image {imageFilename}')
+        print(f'Processing image {cc_filename}')
 
         # Preprocess the image
-        image = Preprocess(imageFilename, downsampleFactor=downSampleFactor)
+        image = Preprocess(bb_filename, cc_filename, downsampleFactor=downSampleFactor)
 
         # save image
-        savePath = os.path.join(directory, imageFilename)
+        savePath = os.path.join(directory, cc_filename)
         plt.imsave(savePath, image, cmap='gray')
 
 if __name__ == '__main__':
