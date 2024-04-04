@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 
 from dataExtraction import dataExtraction
-from models.Discriminator import Discriminator
-from models.Generator import Generator
+from scripts.image_generation.models.deep_learning_models.Discriminator import Discriminator
+from scripts.image_generation.models.deep_learning_models.Generator import Generator
 
 
 def main(downScaleFactor=1, approximations=(0.01, 0.99)):

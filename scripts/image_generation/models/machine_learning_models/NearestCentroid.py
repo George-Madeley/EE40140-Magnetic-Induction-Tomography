@@ -1,6 +1,6 @@
 from sklearn.neighbors import NearestCentroid as NearestCentroidClassifier
 from scripts.image_generation.models.IModel import IModel
-from scripts.image_generation.models.MachineLearningModel import MachineLearningModel
+from scripts.image_generation.models.machine_learning_models.MachineLearningModel import MachineLearningModel
 from pandas import DataFrame
 from typing import List
 
