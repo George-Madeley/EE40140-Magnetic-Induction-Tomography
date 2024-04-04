@@ -6,6 +6,7 @@ import pandas as pd
 from colourFiltering import ColourFiltering
 from frequencyFiltering import FrequencyFiltering
 from morphologicalFiltering import MorphologicalFiltering
+from cleanUp import cleanUp
 
 def downSample(image, factor):
     downsampled_image = image[::factor, ::factor]
@@ -44,8 +45,8 @@ def Preprocess(bb_filename, cc_filename, kernelSize=5, cutoff=0.5, downsampleFac
     return image
 
 def preprocessAllImages():
-    # load in input_data.csv
-    df = pd.read_csv('data.csv')
+    # load in the dataset
+    df = cleanUp.main
 
     downSampleFactor = 8
     newWidth = 640 // downSampleFactor
