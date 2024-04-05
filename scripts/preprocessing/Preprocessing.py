@@ -56,9 +56,12 @@ def preprocessAllImages():
             # save image
             plt.imsave(savePath, image, cmap='gray')
 
-def getCommonFactors(a, b):
+def getCommonFactors(a, b, maxFactor=32):
     factors = []
     for i in range(1, min(a, b) + 1):
+        if i > maxFactor:
+            break
+
         if a % i == 0 and b % i == 0:
             factors.append(i)
     return factors
