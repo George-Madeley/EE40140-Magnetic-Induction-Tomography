@@ -19,15 +19,8 @@ def preprocessAllImages():
         factor = commonFactors[idx]
         nextFactor = commonFactors[idx + 1] if idx + 1 < len(commonFactors) else None
 
-        # If the next factor directory exists, then the images have already been
-        # processed for this factor. Skip to the next factor
-        if nextFactor is not None:
-            newWidth = imageWidth // nextFactor
-            newHeight = imageHeight // nextFactor
-            directory = os.path.join(os.getcwd(), 'images', 'processed', f'{newHeight}x{newWidth}')
-
-            if os.path.exists(directory):
-                continue
+        if checkForProcessedFactors(nextFactor, imageWidth, imageHeight):
+            continue
 
         print(f'Processing images with factor {factor}')
 
@@ -65,6 +58,18 @@ def getCommonFactors(a, b, maxFactor=32):
         if a % i == 0 and b % i == 0:
             factors.append(i)
     return factors
+
+def checkForProcessedFactors(nextFactor, imageWidth, imageHeight):
+    # If the next factor directory exists, then the images have already been
+    # processed for this factor. Skip to the next factor
+    if nextFactor is not None:
+        newWidth = imageWidth // nextFactor
+        newHeight = imageHeight // nextFactor
+        directory = os.path.join(os.getcwd(), 'images', 'processed', f'{newHeight}x{newWidth}')
+
+        if os.path.exists(directory):
+            return True
+    return False
 
 def Preprocess(bb_filename, cc_filename, kernelSize=5, cutoff=0.5, downsampleFactor=1):
     imageDirectory = './images/original'
