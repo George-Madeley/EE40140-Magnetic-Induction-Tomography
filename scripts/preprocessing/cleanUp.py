@@ -42,7 +42,7 @@ class cleanUp:
 
     if not os.path.exists('./data/data_samples.csv'):
       samples = ['0', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
-      dataframePrefix = 'data_sample-'
+      dataframePrefix = './data/data_sample-'
       dataframeSuffix = '.csv'
       df = pd.DataFrame()
       for sample in samples:
