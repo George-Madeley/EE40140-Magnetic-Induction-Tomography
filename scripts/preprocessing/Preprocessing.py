@@ -1,14 +1,14 @@
 import os
+
 from typing import List
+
+import matplotlib.pyplot as plt
 import numpy as np
 
 from colourFiltering import ColourFiltering
 from frequencyFiltering import FrequencyFiltering
 from morphologicalFiltering import MorphologicalFiltering
 from cleanUp import cleanUp
-
-import matplotlib.pyplot as plt
-
 
 def preprocessAllImages() -> None:
   """
@@ -70,6 +70,8 @@ def preprocessAllImages() -> None:
 
       # save image
       plt.imsave(savePath, image, cmap='gray')
+
+  print('Preprocessing complete.')
 
 
 def getCommonFactors(a: int, b: int, maxFactor: int = 32) -> List[int]:
