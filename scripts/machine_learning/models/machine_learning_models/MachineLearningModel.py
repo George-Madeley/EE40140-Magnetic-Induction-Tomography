@@ -1,6 +1,18 @@
+from sys import _getframe
+from typing import Literal, get_args, get_origin
+
 import pandas as pd
 
 class MachineLearningModel:
+  @staticmethod
+  def enforceLiterals(function):
+    kwargs = _getframe(1).f_locals
+    for name, type_ in function.__annotations__.items():
+      value = kwargs.get(name)
+      options = get_args(type_)
+      if get_origin(type_) is Literal and name in kwargs and value not in options:
+        raise AssertionError(f"'{value}' is not in {options} for '{name}'")
+
   def getLabels(self, df):
     """
     Get the labels from the dataframe
