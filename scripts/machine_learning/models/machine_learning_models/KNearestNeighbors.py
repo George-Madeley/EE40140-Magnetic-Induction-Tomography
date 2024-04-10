@@ -2,10 +2,9 @@ from sklearn.neighbors import KNeighborsClassifier
 from pandas import DataFrame
 from typing import List, Union
 
-from IMLModel import IModel
-from MachineLearningModel import MachineLearningModel
+from IModel import IModel
 
-class KNearestNeighbors(IModel, MachineLearningModel):
+class KNearestNeighbors(IModel):
   def __init__(self, k: int, weights: str = 'distance'):
     """
     Initializes a KNearestNeighbors object.

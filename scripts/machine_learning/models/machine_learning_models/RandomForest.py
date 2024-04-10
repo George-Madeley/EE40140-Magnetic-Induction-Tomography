@@ -1,9 +1,8 @@
 from typing import Literal
 from sklearn.ensemble import RandomForestClassifier
-from MachineLearningModel import MachineLearningModel
-from IMLModel import IModel
+from IModel import IModel
 
-class RandomForest(IModel, MachineLearningModel):
+class RandomForest(IModel):
   def __init__(
     self,
     max_depth: int = None,

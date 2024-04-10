@@ -1,15 +1,13 @@
-from typing import Union
 import time
 import csv
 import os
 
 import pandas as pd
 
-from models.machine_learning_models.IMLModel import IModel
-from models.machine_learning_models.MachineLearningModel import MachineLearningModel
+from models.machine_learning_models.IModel import IModel
 
 def runModel(
-  modelClass: type[Union[IModel, MachineLearningModel]],
+  modelClass: type[IModel],
   df: pd.DataFrame,
   noise: bool = False, 
   **kwargs

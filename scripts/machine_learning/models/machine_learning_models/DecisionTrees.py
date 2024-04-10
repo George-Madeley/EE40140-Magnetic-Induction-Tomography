@@ -1,9 +1,8 @@
 from typing import Literal
 from sklearn.tree import DecisionTreeClassifier
-from MachineLearningModel import MachineLearningModel
-from IMLModel import IModel
+from IModel import IModel
 
-class DecisionTrees(IModel, MachineLearningModel):
+class DecisionTrees(IModel):
   def __init__(
     self,
     max_depth: int = None,
