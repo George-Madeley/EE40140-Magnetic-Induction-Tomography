@@ -146,6 +146,20 @@ class cleanUp:
         print(image_name)
 
   @staticmethod
+  def oneHotEncode(df: pd.DataFrame, feature: str) -> pd.DataFrame:
+    """
+    One-hot encode a feature in the dataset.
+
+    :param df: The dataset (pandas dataframe).
+    :param feature: The feature to one-hot encode.
+    :return: The dataset with the one-hot encoded feature.
+    """
+    # One-hot encode the feature
+    df = pd.get_dummies(df, columns=[feature])
+
+    return df
+
+  @staticmethod
   def normalise(df: pd.DataFrame) -> pd.DataFrame:
     """
     Normalise the dataset.

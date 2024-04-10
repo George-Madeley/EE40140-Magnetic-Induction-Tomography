@@ -77,10 +77,14 @@ def preprocessAllImages() -> None:
   df = cleanUp.normalise(df)
 
   df_iron, df_copper = cleanUp.splitDataframeMaterial(df)
+
   df_iron = cleanUp.getEvenDistribution(df_iron, distFeature='shape')
   df_iron = cleanUp.splitDataframe(df_iron, 'shape')
+  df_iron = cleanUp.oneHotEncode(df_iron, 'shape')
+
   df_copper = cleanUp.getEvenDistribution(df_copper, distFeature='sample')
   df_copper = cleanUp.splitDataframe(df_copper, 'sample')
+  df_copper = cleanUp.oneHotEncode(df_copper, 'sample')
 
   df_copper.to_csv('./data/data_samples_copper.csv', index=False)
   df_iron.to_csv('./data/data_samples_iron.csv', index=False)
