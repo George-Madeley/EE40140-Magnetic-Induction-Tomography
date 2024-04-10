@@ -38,6 +38,15 @@ class IModel(ABC):
         pass
 
     @abstractmethod
+    def varyParams(self, params):
+        """
+        Vary the parameters of the model
+        
+        :param params: parameters
+        """
+        pass
+
+    @abstractmethod
     def isParamValid(self, name, value):
         """
         Check if the parameter is valid
