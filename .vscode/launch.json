@@ -17,6 +17,13 @@
         "request": "launch",
         "program": "${workspaceFolder}/scripts/preprocessing/preprocessing.py",
         "console": "integratedTerminal"
-    }
+    },
+    {
+      "name": "Test Models",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/machine_learning/testModel.py",
+      "console": "integratedTerminal"
+    },
   ]
 }
