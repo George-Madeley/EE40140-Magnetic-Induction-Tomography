@@ -1,90 +1,44 @@
-import time
-import csv
-import os
+from typing import Literal
+
+from sklearn.model_selection import GridSearchCV
+
+from models.KNearestNeighbors import KNearestNeighbors
 
 import pandas as pd
 
-from models.machine_learning_models.IModel import IModel
 
-def runModel(
-  modelClass: type[IModel],
-  df: pd.DataFrame,
-  noise: bool = False, 
-  **kwargs
-):
+def runModels():
   """
-  Runs the model with different parameter values and logs the results.
-
-  Args:
-    modelClass (type[Union[IModel, MachineLearningModel]]): The class of the model to be tested.
-    df (pd.DataFrame): The input data for training and evaluation.
-    noise (bool, optional): Flag indicating whether to add noise to the data. Defaults to False.
-    **kwargs: Additional keyword arguments representing the parameters and their corresponding values.
-
-  Returns:
-    None
+  Run all models on the data
   """
-  # Identify the valid parameters for the model i.e., the parameters that the
-  # model can accept and can vary. The parameters that the model cannot accept
-  # or cannot vary are added to the params dictionary with a value of 'n/a'.
-  keys = kwargs.keys()
-  params = {}
-  for key in keys:
-    if not modelClass.isParamValid(key, kwargs[key]):
-      params[key] = 'n/a'
-    else:
-      params[key] = kwargs[key]
+  df_train, df_test, df_val = getData()
 
-  # Filter out the parameters that are not valid
-  validParams = {param:args for param, args in params.items() if args is not 'n/a'}
+  models = [KNearestNeighbors(3)]
+  params = {
+      'n_neighbors': list(range(1, 22, 2))
+  }
+  for model in models:
+    model.varyParams(
+        df_train,
+        params,
+        searchCV=GridSearchCV
+    )
 
-  # Loop through the valid parameters to test the model
-  # with different parameter values
-  for param, args in validParams.items():
-    
-    # Loop through the arguments for the parameter
-    for arg in args:
 
-      # Start the timer
-      startTime = time.perf_counter_ns()
-
-      # Create the model
-      model = modelClass(param=arg)
-      model.train(df, noise=noise)
-      predictions, actual = model.predict(df, noise=noise)
-      metrics = model.evaluate(df, noise=noise)
-
-      # End the timer
-      endTime = time.perf_counter_ns()
-
-      # Log the results
-      defaultParams = model.getDefaultParams()
-      defaultParams[param] = arg
-      logResults(modelClass.__name__, endTime - startTime, metrics, defaultParams)
-
-def logResults(modelName: str, runtime: float | int, metrics: dict, variables: dict):
+def getData(material: Literal['iron', 'copper'] = 'iron'):
   """
-  Logs the results of a machine learning model to a CSV file.
+  Get the data for the specified material
 
-  Args:
-    modelName (str): The name of the model.
-    runtime (float | int): The runtime of the model in seconds.
-    metrics (dict): A dictionary containing the metrics of the model.
-    variables (dict): A dictionary containing the variables used in the model.
+  :param material: the material to get the data for
 
-  Returns:
-    None
+  :return: the data
   """
-  headers = ['Model', 'Runtime'] + list(metrics.keys()) + list(variables.keys())
-  values = [modelName, runtime] + list(metrics.values()) + list(variables.values())
-  filename = f'{modelName}.csv'
-  filepath = os.path.join('results', filename)
+  df = pd.read_csv(f"./data/data_samples_{material}.csv")
+  df_train = df[df['set'] == 'train']
+  df_test = df[df['set'] == 'test']
+  df_val = df[df['set'] == 'val']
 
-  if not os.path.exists(filepath):
-    with open(filepath, 'w', newline='') as f:
-      csvWriter = csv.DictWriter(f, fieldnames=headers)
-      csvWriter.writeheader()
+  return df_train, df_test, df_val
 
-  with open(filepath, 'a', newline='') as f:
-    csvWriter = csv.DictWriter(f, fieldnames=headers)
-    csvWriter.writerow(dict(zip(headers, values)))
+if __name__ == "__main__":
+  runModels()
