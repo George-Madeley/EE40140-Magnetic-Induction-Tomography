@@ -146,6 +146,24 @@ class cleanUp:
         print(image_name)
 
   @staticmethod
+  def normalise(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normalise the dataset.
+
+    :param df: The dataset (pandas dataframe).
+    :return: The normalised dataset.
+    """
+    # Get the columns where the feature name begins with 'bb_'
+    # and 'cc_' but not 'cc_filename' and 'bb_filename'
+    columns = df.columns[df.columns.str.startswith('bb_') | df.columns.str.startswith('cc_')]
+    columns = columns[~columns.isin(['bb_filename', 'cc_filename'])]
+
+    # Normalise the dataset by dividing each value in the columns by 2e4
+    df[columns] = df[columns] / 2e4
+
+    return df
+
+  @staticmethod
   def splitDataframeMaterial(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Split the dataset into iron and copper samples.

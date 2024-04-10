@@ -38,7 +38,7 @@ def preprocessAllImages() -> None:
                                     1] if idx + 1 < len(commonFactors) else None
 
     print(f'Processing images with factor {factor}')
-    
+
     if checkForProcessedFactors(nextFactor, imageWidth, imageHeight):
       continue
 
@@ -74,11 +74,16 @@ def preprocessAllImages() -> None:
       # save image
       plt.imsave(savePath, image, cmap='gray')
 
+  df = cleanUp.normalise(df)
+
   df_iron, df_copper = cleanUp.splitDataframeMaterial(df)
   df_iron = cleanUp.getEvenDistribution(df_iron, distFeature='shape')
   df_iron = cleanUp.splitDataframe(df_iron, 'shape')
   df_copper = cleanUp.getEvenDistribution(df_copper, distFeature='sample')
   df_copper = cleanUp.splitDataframe(df_copper, 'sample')
+
+  df_copper.to_csv('./data/data_samples_copper.csv', index=False)
+  df_iron.to_csv('./data/data_samples_iron.csv', index=False)
 
   print('Preprocessing complete.')
 
