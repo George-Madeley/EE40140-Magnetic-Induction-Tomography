@@ -15,7 +15,7 @@ function captureData()
     sampleId = input(">?", "s");
     
     % CSV filepath
-    CSVfilepath = 'C:\Users\Georg\OneDrive\Documents\Education\University\Semester 8\EE40150 Final Year Project\Code';
+    CSVfilepath = 'C:\Users\Georg\OneDrive\Documents\Education\University\Semester 8\EE40150 Final Year Project\Code\data';
     CSVfilename = fullfile(CSVfilepath, ['data_sample-' sampleId '.csv']);
 
     % If the CSV file does not exist, create a new file and write the

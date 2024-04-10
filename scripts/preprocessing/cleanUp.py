@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 
 class cleanUp:
@@ -39,9 +40,9 @@ class cleanUp:
       df['sample'] = df['sample'].astype(str)
       return df
 
-    if not os.path.exists('data_samples.csv'):
+    if not os.path.exists('./data/data_samples.csv'):
       samples = ['0', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
-      dataframePrefix = 'data_sample-'
+      dataframePrefix = './data/data_sample-'
       dataframeSuffix = '.csv'
       df = pd.DataFrame()
       for sample in samples:
@@ -50,13 +51,13 @@ class cleanUp:
 
       print(f"Combined dataframe has {len(df)} rows")
       # Save the combined dataframe to a new csv file
-      df.to_csv('data_samples.csv', index=False)
+      df.to_csv('./data/data_samples.csv', index=False)
 
     else:
       # Read the combined dataframe from the csv file. The
       # file does not have an index column therefore set
       # index_col=False
-      df = pd.read_csv('data_samples.csv', index_col=False)
+      df = pd.read_csv('./data/data_samples.csv', index_col=False)
 
       # All the values in the sample column are of type string.
       # Convert them to type string.

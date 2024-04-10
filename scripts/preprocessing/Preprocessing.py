@@ -1,4 +1,7 @@
 import os
+
+from typing import List
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -7,93 +10,177 @@ from frequencyFiltering import FrequencyFiltering
 from morphologicalFiltering import MorphologicalFiltering
 from cleanUp import cleanUp
 
-def preprocessAllImages():
-    # load in the dataset
-    df = cleanUp.main()
+def preprocessAllImages() -> None:
+  """
+  Preprocesses all images in the dataset.
 
-    imageWidth = 640
-    imageHeight = 480
-    commonFactors = getCommonFactors(imageWidth, imageHeight)
+  This function performs the following steps:
+  1. Cleans up the dataset using the `cleanUp.main()` function.
+  2. Calculates the common factors of the image width and height.
+  3. Iterates over each common factor and processes the images.
+  4. Creates a directory for each processed image size.
+  5. For each image in the dataset, preprocesses the image and saves it in the corresponding directory.
 
-    for idx in range(len(commonFactors)):
-        factor = commonFactors[idx]
-        nextFactor = commonFactors[idx + 1] if idx + 1 < len(commonFactors) else None
+  Returns:
+      None
+  """
+  df = cleanUp.main()
 
-        # If the next factor directory exists, then the images have already been
-        # processed for this factor. Skip to the next factor
-        if nextFactor is not None:
-            newWidth = imageWidth // nextFactor
-            newHeight = imageHeight // nextFactor
-            directory = os.path.join(os.getcwd(), 'images', 'processed', f'{newHeight}x{newWidth}')
+  imageWidth: int = 640
+  imageHeight: int = 480
+  commonFactors: List[int] = getCommonFactors(imageWidth, imageHeight)
 
-            if os.path.exists(directory):
-                continue
+  for idx in range(len(commonFactors)):
+    factor: int = commonFactors[idx]
+    nextFactor: int = commonFactors[idx +
+                                    1] if idx + 1 < len(commonFactors) else None
 
-        print(f'Processing images with factor {factor}')
+    if checkForProcessedFactors(nextFactor, imageWidth, imageHeight):
+      continue
 
-        newWidth = imageWidth // factor
-        newHeight = imageHeight // factor
+    print(f'Processing images with factor {factor}')
 
-        directory = os.path.join(os.getcwd(), 'images', 'processed', f'{newHeight}x{newWidth}')
-        os.makedirs(directory, exist_ok=True)
+    newWidth: int = imageWidth // factor
+    newHeight: int = imageHeight // factor
 
-        for i, row in df.iterrows():
-            # Get the filename
-            bb_filename = row['bb_filename']
-            cc_filename = row['cc_filename']
-            sample = row['sample']
+    directory: str = os.path.join(
+        os.getcwd(),
+        'images',
+        'processed',
+        f'{newHeight}x{newWidth}')
+    os.makedirs(directory, exist_ok=True)
 
-            savePath = os.path.join(directory, cc_filename)
+    for i, row in df.iterrows():
+      # Get the filename
+      bb_filename: str = row['bb_filename']
+      cc_filename: str = row['cc_filename']
+      sample: str = row['sample']
 
-            if os.path.exists(savePath):
-                continue
+      savePath: str = os.path.join(directory, cc_filename)
 
-            print(f'Processing image {cc_filename} to {newHeight}x{newWidth} sample: {sample}, i: {i}')
+      if os.path.exists(savePath):
+        continue
 
-            # Preprocess the image
-            image = Preprocess(bb_filename, cc_filename, downsampleFactor=factor)
+      print(
+        f'Processing image {cc_filename} to {newHeight}x{newWidth} sample: {sample}, i: {i}')
 
-            # save image
-            plt.imsave(savePath, image, cmap='gray')
+      # Preprocess the image
+      image: np.ndarray = Preprocess(
+          bb_filename, cc_filename, downsampleFactor=factor)
 
-def getCommonFactors(a, b):
-    factors = []
-    for i in range(1, min(a, b) + 1):
-        if a % i == 0 and b % i == 0:
-            factors.append(i)
-    return factors
+      # save image
+      plt.imsave(savePath, image, cmap='gray')
 
-def Preprocess(bb_filename, cc_filename, kernelSize=5, cutoff=0.5, downsampleFactor=1):
-    imageDirectory = './images/original'
+  print('Preprocessing complete.')
 
-    # get the filename
-    imagePath = os.path.join(imageDirectory, cc_filename)
 
-    # get image from file
-    image = np.array(plt.imread(imagePath))
+def getCommonFactors(a: int, b: int, maxFactor: int = 32) -> List[int]:
+  """
+  Returns a list of common factors between two numbers within a specified range.
 
-    # convert to greyscale
-    image = ColourFiltering.toGreyscale(image)
+  Parameters:
+  a (int): The first number.
+  b (int): The second number.
+  maxFactor (int, optional): The maximum factor to consider. Defaults to 32.
 
-    # convert to binary
-    image = ColourFiltering.toBinary(image, cutoff)
+  Returns:
+  list: A list of common factors between a and b.
 
-    # remove background
-    image = ColourFiltering.removeBackground(image, f'{imageDirectory}/{bb_filename}')
+  """
+  factors: List[int] = []
+  for i in range(1, min(a, b) + 1):
+    if i > maxFactor:
+      break
 
-    # convert to binary
-    image = ColourFiltering.toBinary(image, cutoff)
+    if a % i == 0 and b % i == 0:
+      factors.append(i)
+  return factors
 
-    # apply opening
-    image = MorphologicalFiltering.opening(image, kernelSize)
 
-    # apply closing
-    image = MorphologicalFiltering.closing(image, kernelSize)
+def checkForProcessedFactors(
+  nextFactor: int,
+  imageWidth: int,
+        imageHeight: int) -> bool:
+  """
+  Checks if the images have already been processed for a given factor.
 
-    # downsample
-    image = ColourFiltering.downSample(image, downsampleFactor)
+  Args:
+      nextFactor (int): The next factor to be checked.
+      imageWidth (int): The width of the original image.
+      imageHeight (int): The height of the original image.
 
-    return image
+  Returns:
+      bool: True if the images have already been processed for the given factor, False otherwise.
+  """
+  # If the next factor directory exists, then the images have already been
+  # processed for this factor. Skip to the next factor
+  if nextFactor is not None:
+    newWidth: int = imageWidth // nextFactor
+    newHeight: int = imageHeight // nextFactor
+    directory: str = os.path.join(
+        os.getcwd(),
+        'images',
+        'processed',
+        f'{newHeight}x{newWidth}')
+
+    if os.path.exists(directory):
+      return True
+  return False
+
+
+def Preprocess(
+  bb_filename: str,
+  cc_filename: str,
+  kernelSize: int = 5,
+  cutoff: float = 0.5,
+        downsampleFactor: int = 1) -> np.ndarray:
+  """
+  Preprocesses an image by performing various operations such as greyscale conversion, binary conversion,
+  background removal, morphological filtering, and downsampling.
+
+  Args:
+      bb_filename (str): The filename of the background image used for background removal.
+      cc_filename (str): The filename of the input image to be preprocessed.
+      kernelSize (int, optional): The size of the kernel used for morphological filtering. Defaults to 5.
+      cutoff (float, optional): The cutoff value used for binary conversion. Defaults to 0.5.
+      downsampleFactor (int, optional): The factor by which the image is downsampled. Defaults to 1.
+
+  Returns:
+      numpy.ndarray: The preprocessed image.
+  """
+
+  imageDirectory: str = './images/original'
+
+  # get the filename
+  imagePath: str = os.path.join(imageDirectory, cc_filename)
+
+  # get image from file
+  image: np.ndarray = np.array(plt.imread(imagePath))
+
+  # convert to greyscale
+  image = ColourFiltering.toGreyscale(image)
+
+  # convert to binary
+  image = ColourFiltering.toBinary(image, cutoff)
+
+  # remove background
+  image = ColourFiltering.removeBackground(
+      image, f'{imageDirectory}/{bb_filename}')
+
+  # convert to binary
+  image = ColourFiltering.toBinary(image, cutoff)
+
+  # apply opening
+  image = MorphologicalFiltering.opening(image, kernelSize)
+
+  # apply closing
+  image = MorphologicalFiltering.closing(image, kernelSize)
+
+  # downsample
+  image = ColourFiltering.downSample(image, downsampleFactor)
+
+  return image
+
 
 if __name__ == '__main__':
-    preprocessAllImages()
+  preprocessAllImages()
