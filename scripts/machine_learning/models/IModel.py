@@ -2,135 +2,103 @@ from abc import ABC, abstractmethod
 from sys import _getframe
 from typing import Literal, get_args, get_origin
 
-import pandas as pd
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
 class IModel(ABC):
-    @abstractmethod
-    def train(self, train_df):
-        """
-        Train the model
-        
-        :param train_df: training dataframe
-        """
-        pass
+  @abstractmethod
+  def train(self, train_df):
+    """
+    Train the model
 
-    @abstractmethod
-    def test(self, test_df):
-        """
-        Test the model
-        
-        :param test_df: test dataframe
-        
-        :return: metrics
-        """
-        pass
+    :param train_df: training dataframe
+    """
+    pass
 
-    @abstractmethod
-    def predict(self, predict_df):
-        """
-        Predict the labels of the test data
-        
-        :param predict_df: prediction dataframe
-        
-        :return: predictions
-        """
-        pass
+  @abstractmethod
+  def test(self, test_df):
+    """
+    Test the model
 
-    @abstractmethod
-    def varyParams(self, params):
-        """
-        Vary the parameters of the model
-        
-        :param params: parameters
-        """
-        pass
+    :param test_df: test dataframe
 
-    @abstractmethod
-    def isParamValid(self, name, value):
-        """
-        Check if the parameter is valid
-        
-        :param name: name of the parameter
-        :param value: value of the parameter
-        
-        :return: boolean
-        """
-        pass
+    :return: metrics
+    """
+    pass
 
-    @abstractmethod
-    def getDefaultParams(self):
-        """
-        Get the default parameters
-        
-        :return: default parameters
-        """
-        pass
+  @abstractmethod
+  def predict(self, predict_df):
+    """
+    Predict the labels of the test data
 
-    
-    @staticmethod
-    def enforceLiterals(function):
-        kwargs = _getframe(1).f_locals
-        for name, type_ in function.__annotations__.items():
-            value = kwargs.get(name)
-            options = get_args(type_)
-            if get_origin(type_) is Literal and name in kwargs and value not in options:
-                raise AssertionError(f"'{value}' is not in {options} for '{name}'")
+    :param predict_df: prediction dataframe
 
-    def getLabels(self, df):
-        """
-        Get the labels from the dataframe
-        
-        :param df: dataframe
-        
-        :return: labels
-        """
-        return df['shape'].values
-    
-    def getValuesWithBackgroundNoise(self, df):
-        """
-        Get the values with background noise
-        
-        :param df: dataframe
-        
-        :return: values
-        """
-        # Get the values of the background noise
-        bbColumnNames = df.filter(regex='^bb_\d{1,3}$').columns
-        bbValues = df[bbColumnNames].values
+    :return: predictions
+    """
+    pass
 
-        # Get the values of the sample
-        ccColumnNames = df.filter(regex='^cc_\d{1,3}$').columns
-        ccValues = df[ccColumnNames].values
+  @abstractmethod
+  def varyParams(self, params):
+    """
+    Vary the parameters of the model
 
-        # Combine the values of the background noise and the sample to the new
-        # dataframe has a total of 240 columns
-        values = pd.concat([bbValues, ccValues], axis=1)
+    :param params: parameters
+    """
+    pass
 
-        return values
-    
-    def getValuesWithoutBackgroundNoise(self, df):
-        """
-        Get the values without background noise
-        
-        :param df: dataframe
+  @abstractmethod
+  def isParamValid(self, name, value):
+    """
+    Check if the parameter is valid
 
-        :return: values
-        """
+    :param name: name of the parameter
+    :param value: value of the parameter
 
-        # Get the values of the sample
-        ccColumnNames = df.filter(regex='^cc_\d{1,3}$').columns
-        ccValues = df[ccColumnNames].values
+    :return: boolean
+    """
+    pass
 
-        return ccValues
-    
-    def evaluate(self, true_labels, predicted_labels) -> dict:
-        metrics = {
-            'accuracy': accuracy_score(true_labels, predicted_labels),
-            'precision': precision_score(true_labels, predicted_labels),
-            'recall': recall_score(true_labels, predicted_labels),
-            'f1': f1_score(true_labels, predicted_labels),
-            'roc_auc': roc_auc_score(true_labels, predicted_labels)
-        }
+  @abstractmethod
+  def getDefaultParams(self):
+    """
+    Get the default parameters
 
-        return metrics
+    :return: default parameters
+    """
+    pass
+
+  @staticmethod
+  def enforceLiterals(function):
+    kwargs = _getframe(1).f_locals
+    for name, type_ in function.__annotations__.items():
+      value = kwargs.get(name)
+      options = get_args(type_)
+      if get_origin(
+        type_) is Literal and name in kwargs and value not in options:
+        raise AssertionError(f"'{value}' is not in {options} for '{name}'")
+
+  def getValuesAndLabels(
+    self,
+    df,
+    labelName: Literal['shape', 'sample'] = 'shape',
+    noise: bool = False
+  ):
+    """
+    Get the values and labels from the dataframe
+
+    :param df: dataframe
+    :param labelName: label column name
+
+    :return: values, labels
+    """
+
+    valueColumnNames = [col for col in df.columns if col.startswith('cc_')]
+    valueColumnNames.remove('cc_filename')
+    if noise:
+      valueColumnNames += [col for col in df.columns if col.startswith('bb_')]
+      valueColumnNames.remove('bb_filename')
+
+    values = df[valueColumnNames].values
+
+    labelColumnNames = [col for col in df.columns if col.startswith(labelName)]
+    labels = df[labelColumnNames].values
+
+    return values, labels

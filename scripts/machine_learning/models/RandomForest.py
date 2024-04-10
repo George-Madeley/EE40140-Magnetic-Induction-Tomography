@@ -1,6 +1,7 @@
 from typing import Literal
 from sklearn.ensemble import RandomForestClassifier
-from IModel import IModel
+
+from .IModel import IModel
 
 class RandomForest(IModel):
   def __init__(

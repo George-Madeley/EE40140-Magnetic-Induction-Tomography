@@ -1,7 +1,9 @@
 from sklearn.neighbors import NearestCentroid as NearestCentroidClassifier
-from IModel import IModel
+
 from pandas import DataFrame
 from typing import List
+
+from .IModel import IModel
 
 class NearestCentroid(IModel):
   def __init__(self):

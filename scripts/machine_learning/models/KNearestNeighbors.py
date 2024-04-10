@@ -1,56 +1,44 @@
 from random import choice
 from string import ascii_letters
-from typing import List, Union
+from typing import List, Literal, Union
 
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 from pandas import DataFrame, concat
 
-from IModel import IModel
-
+from .IModel import IModel
 class KNearestNeighbors(IModel):
-  def __init__(self, k: int, weights: str = 'distance'):
+  def __init__(
+      self,
+      k: int,
+      labelName: Literal['shape', 'sample'] = 'shape',
+      noise: bool = False
+    ):
     """
     Initializes a KNearestNeighbors object.
 
     Parameters:
     - k (int): The number of nearest neighbors to consider.
-    - weights (str): The weight function used in prediction. Default is 'distance'.
 
     Returns:
     - None
     """
-    self.model = self.createModel(k, weights)
+    self.labelName = labelName
+    self.noise = noise
+    self.model = KNeighborsClassifier(n_neighbors=k)
 
-  def createModel(self, k: int, weights: str = 'distance') -> KNeighborsClassifier:
-    """
-    Create a k nearest neighbor model
-
-    :param k: number of neighbors
-    :param weights: weight function used in prediction
-
-    :return: model
-    """
-    model = KNeighborsClassifier(n_neighbors=k, weights=weights)
-    return model
-
-  def train(self, df_train: DataFrame, noise: bool = False) -> None:
+  def train(self, df: DataFrame) -> None:
     """
     Train the model
 
     :param train_df: training dataframe
     :param noise: whether to include background noise
     """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_train)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_train)
-
-    labels = super().getLabels(df_train)
+    values, labels = super().getValuesAndLabels(df, self.labelName. self.noise)
 
     self.model.fit(values, labels)
 
-  def test(self, df_test: DataFrame, noise: bool = False) -> float:
+  def test(self, df: DataFrame) -> float:
     """
     Test the model
 
@@ -59,18 +47,13 @@ class KNearestNeighbors(IModel):
 
     :return: score
     """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_test)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_test)
-
-    labels = super().getLabels(df_test)
+    values, labels = super().getValuesAndLabels(df, self.labelName. self.noise)
 
     score = self.model.score(values, labels)
 
     return score
 
-  def predict(self, df_predictions: DataFrame, noise: bool = False) -> List[Union[float, List[float]]]:
+  def predict(self, df: DataFrame) -> List[Union[float, List[float]]]:
     """
     Predict the labels of the test data
 
@@ -79,23 +62,17 @@ class KNearestNeighbors(IModel):
 
     :return: predictions
     """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_predictions)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_predictions)
-
-    labels = super().getLabels(df_predictions)
+    values, labels = super().getValuesAndLabels(df, self.labelName. self.noise)
 
     predictions = self.model.predict_proba(values)
 
     return predictions, labels
-  
+
   def varyParams(
       self,
       df: DataFrame,
       params: dict,
       searchCV: type[GridSearchCV | RandomizedSearchCV],
-      noise: bool = False,
       scoring: dict = None,
       n_jobs: int = -1,
       verbose: int = 0
@@ -105,49 +82,53 @@ class KNearestNeighbors(IModel):
 
     :param params: parameters
     """
+    validParams = {}
     for param in params.keys():
-      if not self.isParamValid(param, params[param]):
-        # Remove the parameter from the dictionary if it is invalid
-        del params[param]
+      if self.isParamValid(param):
+        validParams[param] = params[param]
 
-    if params == {}:
-      print(f'No valid parameters to vary for for {self.__class__.__name__} model.')
-      
+    validParams
+
+    if validParams == {}:
+      print(
+        f'No valid parameters to vary for for {self.__class__.__name__} model.')
+
     if scoring is None:
       scoring = {
-        'Precision': 'precision',
-        'Recall': 'recall',
+        'Precision': 'precision_micro',
+        'Recall': 'recall_micro',
         'Accuracy': 'accuracy',
-        'F1': 'f1',
+        'F1': 'f1_micro',
         'AUC': 'roc_auc',
       }
 
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df)
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
 
-    labels = super().getLabels(df)
-    
     clf = searchCV(
       self.model,
-      params,
+      validParams,
       scoring=scoring,
       n_jobs=n_jobs,
-      verbose=verbose
+      verbose=verbose,
+      refit=False
     )
     clf.fit(values, labels)
 
+
     df_results = concat(
       [
-        DataFrame(clf.cv_results_['params']),
+        DataFrame(clf.cv_results_['params'])
+      ] + [
         DataFrame(
-          clf.cv_results_['mean_test_score'],
-          columns=['mean_test_score']
-        ),
+          clf.cv_results_[f'mean_test_{metric}'],
+          columns=[metric]
+        ) for metric in scoring.keys()
       ],
       axis=1
     )
+
+    # Add the column 'model' to the dataframe and set it to the model name
+    df_results['model'] = self.__class__.__name__
 
     # Generate a random string
     randomString = ''.join(
@@ -160,31 +141,28 @@ class KNearestNeighbors(IModel):
       index=False
     )
 
-  
-  @staticmethod
-  def isParamValid(self, name: str, value: str) -> bool:
+  def isParamValid(self, name: str) -> bool:
     """
     Check if the parameter is valid
 
     :param name: name of the parameter
-    :param value: value of the parameter
 
     :return: boolean
     """
-    validParams = {
-      'weights': ['uniform', 'distance'],
-      'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
-      'leaf_size': list(range(1, 101)),
-      'p': [1, 2],
-      'metric': ['minkowski', 'euclidean', 'manhattan', 'chebyshev'],
-      'n_jobs': [-1, None],
-      'n_neighbors': list(range(1, 101)),
-    }
+    validParams = [
+      'weights',
+      'algorithm',
+      'leaf_size'
+      'p',
+      'metric',
+      'n_jobs',
+      'n_neighbors'
+    ]
 
-    if name in validParams.keys() and value in validParams.get(name, []):
+    if name in validParams:
       return True
     return False
-  
+
   def getDefaultParams(self) -> dict:
     """
     Get the default parameters
