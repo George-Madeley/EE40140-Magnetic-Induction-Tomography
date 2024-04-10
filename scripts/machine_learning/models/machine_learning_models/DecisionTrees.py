@@ -97,41 +97,36 @@ class DecisionTrees(IModel, MachineLearningModel):
 
     return self.dtree.predict(values)
   
-  def printModelParams(self):
+  @staticmethod
+  def isParamValid(self, name: str, value: str) -> bool:
     """
-    Prints the parameters of the decision tree model.
+    Check if the parameter is valid
 
-    Returns:
-      None
-    """
-    params = self.dtree.get_params()
-    print(params)
+    :param name: name of the parameter
+    :param value: value of the parameter
 
-  def getDepth(self):
+    :return: boolean
     """
-    Returns the depth of the decision tree.
+    validParams = {
+      "criterion": ["gini", "entropy", "log_loss"],
+      "splitter": ["best", "random"],
+      "max_depth": list(range(1, 1001)),
+      "min_samples_split": list(range(1, 1001)),
+      "min_samples_leaf": list(range(1, 1001)),
+      "max_features": ["sqrt", "log2"],
+      "max_leaf_nodes": list(range(1, 1001))
+    }
 
-    Returns:
-      int: The depth of the decision tree.
-    """
-    return self.dtree.get_depth()
+    if name in validParams.keys() and value in validParams.get(name, []):
+      return True
+    return False
   
-  def plotTree(self):
+  def getDefaultParams(self) -> dict:
     """
-    Plots the decision tree model.
+    Get the default parameters
 
-    This method uses the `plot_tree` function from the `sklearn.tree` module to visualize the decision tree model.
-    The resulting plot is displayed using `matplotlib.pyplot`.
-
-    Parameters:
-    None
-
-    Returns:
-    None
+    :return: default parameters
     """
-    from sklearn.tree import plot_tree
-    import matplotlib.pyplot as plt
+    return self.model.get_params()
+  
 
-    fig, ax = plt.subplots(figsize=(20, 10))
-    plot_tree(self.dtree, ax=ax)
-    plt.show()

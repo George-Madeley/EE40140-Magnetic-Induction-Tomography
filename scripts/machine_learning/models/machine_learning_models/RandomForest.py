@@ -103,4 +103,37 @@ class RandomForest(IModel, MachineLearningModel):
       values = super().getValuesWithoutBackgroundNoise(df_predict)
 
     return self.randomForest.predict(values)
+  
+  @staticmethod
+  def isParamValid(self, name: str, value: str) -> bool:
+    """
+    Check if the parameter is valid
+
+    :param name: name of the parameter
+    :param value: value of the parameter
+
+    :return: boolean
+    """
+    validParams = {
+      'n_estimators': list(range(1, 1001)),
+      'criterion': ['gini', 'entropy', 'log_loss'],
+      'max_depth': list(range(1, 101)),
+      'min_samples_split': list(range(2, 21)),
+      'min_samples_leaf': list(range(1, 21)),
+      'max_features': ['sqrt', 'log2', None],
+      'max_leaf_nodes': list(range(2, 101)),
+      'min_impurity_decrease': list(range(0, 1, 0.01)),
+    }
+
+    if name in validParams.keys() and value in validParams.get(name, []):
+      return True
+    return False
+  
+  def getDefaultParams(self) -> dict:
+    """
+    Get the default parameters
+
+    :return: default parameters
+    """
+    return self.model.get_params()
     

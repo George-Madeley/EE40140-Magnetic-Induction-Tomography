@@ -20,3 +20,35 @@ class IModel(ABC):
         :return: metrics
         """
         pass
+
+    @abstractmethod
+    def predict(self, predict_df):
+        """
+        Predict the labels of the test data
+        
+        :param predict_df: prediction dataframe
+        
+        :return: predictions
+        """
+        pass
+
+    @abstractmethod
+    def isParamValid(self, name, value):
+        """
+        Check if the parameter is valid
+        
+        :param name: name of the parameter
+        :param value: value of the parameter
+        
+        :return: boolean
+        """
+        pass
+
+    @abstractmethod
+    def getDefaultParams(self):
+        """
+        Get the default parameters
+        
+        :return: default parameters
+        """
+        pass

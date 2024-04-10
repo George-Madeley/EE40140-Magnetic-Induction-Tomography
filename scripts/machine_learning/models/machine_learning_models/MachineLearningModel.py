@@ -1,6 +1,8 @@
 from sys import _getframe
 from typing import Literal, get_args, get_origin
 
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+
 import pandas as pd
 
 class MachineLearningModel:
@@ -59,3 +61,14 @@ class MachineLearningModel:
     ccValues = df[ccColumnNames].values
 
     return ccValues
+  
+  def evaluate(self, true_labels, predicted_labels) -> dict:
+    metrics = {
+      'accuracy': accuracy_score(true_labels, predicted_labels),
+      'precision': precision_score(true_labels, predicted_labels),
+      'recall': recall_score(true_labels, predicted_labels),
+      'f1': f1_score(true_labels, predicted_labels),
+      'roc_auc': roc_auc_score(true_labels, predicted_labels)
+    }
+
+    return metrics

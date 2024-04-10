@@ -1,11 +1,22 @@
 from sklearn.neighbors import KNeighborsClassifier
-from IMLModel import IModel
-from MachineLearningModel import MachineLearningModel
 from pandas import DataFrame
 from typing import List, Union
 
-class KNearestNeighbor(IModel, MachineLearningModel):
+from IMLModel import IModel
+from MachineLearningModel import MachineLearningModel
+
+class KNearestNeighbors(IModel, MachineLearningModel):
   def __init__(self, k: int, weights: str = 'distance'):
+    """
+    Initializes a KNearestNeighbors object.
+
+    Parameters:
+    - k (int): The number of nearest neighbors to consider.
+    - weights (str): The weight function used in prediction. Default is 'distance'.
+
+    Returns:
+    - None
+    """
     self.model = self.createModel(k, weights)
 
   def createModel(self, k: int, weights: str = 'distance') -> KNeighborsClassifier:
@@ -70,6 +81,40 @@ class KNearestNeighbor(IModel, MachineLearningModel):
     else:
       values = super().getValuesWithoutBackgroundNoise(df_predictions)
 
+    labels = super().getLabels(df_predictions)
+
     predictions = self.model.predict_proba(values)
 
-    return predictions
+    return predictions, labels
+  
+  @staticmethod
+  def isParamValid(self, name: str, value: str) -> bool:
+    """
+    Check if the parameter is valid
+
+    :param name: name of the parameter
+    :param value: value of the parameter
+
+    :return: boolean
+    """
+    validParams = {
+      'weights': ['uniform', 'distance'],
+      'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
+      'leaf_size': list(range(1, 101)),
+      'p': [1, 2],
+      'metric': ['minkowski', 'euclidean', 'manhattan', 'chebyshev'],
+      'n_jobs': [-1, None],
+      'n_neighbors': list(range(1, 101)),
+    }
+
+    if name in validParams.keys() and value in validParams.get(name, []):
+      return True
+    return False
+  
+  def getDefaultParams(self) -> dict:
+    """
+    Get the default parameters
+
+    :return: default parameters
+    """
+    return self.model.get_params()

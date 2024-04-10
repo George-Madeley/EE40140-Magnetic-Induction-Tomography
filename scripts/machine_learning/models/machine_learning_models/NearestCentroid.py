@@ -70,3 +70,31 @@ class NearestCentroid(IModel, MachineLearningModel):
     predictions = self.model.predict(values)
 
     return predictions
+
+  @staticmethod
+  def isParamValid(self, name: str, value: str) -> bool:
+    """
+    Check if the parameter is valid
+
+    :param name: name of the parameter
+    :param value: value of the parameter
+
+    :return: boolean
+    """
+    
+    validParams = {
+      'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
+      'shrink_threshold': ['None']
+    }
+
+    if name in validParams.keys() and value in validParams.get(name, []):
+      return True
+    return False
+  
+  def getDefaultParams(self) -> dict:
+    """
+    Get the default parameters
+
+    :return: default parameters
+    """
+    return self.model.get_params()
