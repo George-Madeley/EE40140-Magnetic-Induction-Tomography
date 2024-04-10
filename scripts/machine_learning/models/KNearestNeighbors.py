@@ -137,7 +137,7 @@ class KNearestNeighbors(IModel):
 
     # Save the results to a CSV file
     df_results.to_csv(
-      f'{self.__class__.__name__}_results_{randomString}.csv',
+      f'./results/{self.__class__.__name__}_results_{randomString}.csv',
       index=False
     )
 
