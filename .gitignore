@@ -168,3 +168,5 @@ input_data.csv
 # Collection of images used for training, testing, and validating the model
 images/
 data_samples.csv
+data/data_samples_copper.csv
+data/data_samples_iron.csv

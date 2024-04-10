@@ -11,6 +11,7 @@ from morphologicalFiltering import MorphologicalFiltering
 from cleanUp import cleanUp
 
 def preprocessAllImages() -> None:
+  
   """
   Preprocesses all images in the dataset.
 
@@ -30,15 +31,17 @@ def preprocessAllImages() -> None:
   imageHeight: int = 480
   commonFactors: List[int] = getCommonFactors(imageWidth, imageHeight)
 
+
   for idx in range(len(commonFactors)):
     factor: int = commonFactors[idx]
     nextFactor: int = commonFactors[idx +
                                     1] if idx + 1 < len(commonFactors) else None
 
+    print(f'Processing images with factor {factor}')
+    
     if checkForProcessedFactors(nextFactor, imageWidth, imageHeight):
       continue
 
-    print(f'Processing images with factor {factor}')
 
     newWidth: int = imageWidth // factor
     newHeight: int = imageHeight // factor
@@ -70,6 +73,12 @@ def preprocessAllImages() -> None:
 
       # save image
       plt.imsave(savePath, image, cmap='gray')
+
+  df_iron, df_copper = cleanUp.splitDataframeMaterial(df)
+  df_iron = cleanUp.getEvenDistribution(df_iron, distFeature='shape')
+  df_iron = cleanUp.splitDataframe(df_iron, 'shape')
+  df_copper = cleanUp.getEvenDistribution(df_copper, distFeature='sample')
+  df_copper = cleanUp.splitDataframe(df_copper, 'sample')
 
   print('Preprocessing complete.')
 
