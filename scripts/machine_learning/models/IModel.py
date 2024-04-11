@@ -85,11 +85,11 @@ class IModel(ABC):
 
     if scoring is None:
       scoring = {
+        'Accuracy': 'accuracy',
+        'AUC': 'roc_auc_ovr',
+        'F1': 'f1_micro',
         'Precision': 'precision_micro',
         'Recall': 'recall_micro',
-        'Accuracy': 'accuracy',
-        'F1': 'f1_micro',
-        'AUC': 'roc_auc',
       }
 
     values, labels = self.getValuesAndLabels(df)
