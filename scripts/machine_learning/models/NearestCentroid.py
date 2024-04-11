@@ -9,7 +9,8 @@ class NearestCentroid(IModel):
   def __init__(
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
-    noise: bool = False
+    noise: bool = False,
+    oneHotEncode: bool = False
   ):
     """
     Initialize the NearestCentroid model.
@@ -24,6 +25,7 @@ class NearestCentroid(IModel):
     }
     self.labelName = labelName
     self.noise = noise
+    self.oneHotEncode = oneHotEncode
     self.model = NearestCentroidClassifier()
 
   def train(self, df: DataFrame) -> None:

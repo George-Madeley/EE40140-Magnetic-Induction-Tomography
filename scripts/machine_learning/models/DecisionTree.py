@@ -8,7 +8,8 @@ class DecisionTree(IModel):
   def __init__(
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
-    noise: bool = False
+    noise: bool = False,
+    oneHotEncode: bool = False
   ):
     """
     Initialize a DecisionTree object.
@@ -28,6 +29,7 @@ class DecisionTree(IModel):
     }
     self.labelName = labelName
     self.noise = noise
+    self.oneHotEncode = oneHotEncode
     self.model = DecisionTreeClassifier()
 
   def train(self, df: DataFrame) -> None:

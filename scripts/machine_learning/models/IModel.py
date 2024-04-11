@@ -92,7 +92,7 @@ class IModel(ABC):
         'AUC': 'roc_auc',
       }
 
-    values, labels = self.getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = self.getValuesAndLabels(df)
 
     clf = searchCV(
       self.model,
@@ -148,27 +148,27 @@ class IModel(ABC):
   def getValuesAndLabels(
     self,
     df,
-    labelName: Literal['shape', 'sample'] = 'shape',
-    noise: bool = False
   ):
     """
     Get the values and labels from the dataframe
 
     :param df: dataframe
-    :param labelName: label column name
 
     :return: values, labels
     """
 
     valueColumnNames = [col for col in df.columns if col.startswith('cc_')]
     valueColumnNames.remove('cc_filename')
-    if noise:
+    if self.noise:
       valueColumnNames += [col for col in df.columns if col.startswith('bb_')]
       valueColumnNames.remove('bb_filename')
 
     values = df[valueColumnNames].values
 
-    labelColumnNames = [col for col in df.columns if col.startswith(labelName + '_')]
-    labels = df[labelColumnNames].values
+    if self.oneHotEncode:
+      labelColumnNames = [col for col in df.columns if col.startswith(self.labelName + '_')]
+      labels = df[labelColumnNames].values
+    else:
+      labels = df[self.labelName].values
 
     return values, labels

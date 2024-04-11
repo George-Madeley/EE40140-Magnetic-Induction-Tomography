@@ -10,6 +10,7 @@ class RandomForest(IModel):
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
     noise: bool = False,
+    oneHotEncode: bool = False
   ):
     """
     Initializes a RandomForest object.
@@ -30,6 +31,7 @@ class RandomForest(IModel):
     }
     self.labelName = labelName
     self.noise = noise
+    self.oneHotEncode = oneHotEncode
     self.model = RandomForestClassifier()
 
   def train(self, df: DataFrame) -> None:

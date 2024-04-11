@@ -8,7 +8,8 @@ class KNearestNeighbors(IModel):
   def __init__(
       self,
       labelName: Literal['shape', 'sample'] = 'shape',
-      noise: bool = False
+      noise: bool = False,
+      oneHotEncode: bool = False
     ):
     """
     Initializes a KNearestNeighbors object.
@@ -27,6 +28,7 @@ class KNearestNeighbors(IModel):
     }
     self.labelName = labelName
     self.noise = noise
+    self.oneHotEncode = oneHotEncode
     self.model = KNeighborsClassifier()
 
   def train(self, df: DataFrame) -> None:
