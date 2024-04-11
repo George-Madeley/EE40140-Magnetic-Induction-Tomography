@@ -15,10 +15,10 @@ def runModels():
   df_train, df_test, df_val = getData()
 
   models = [
-    StochasticGradientDescent(),
+    NeuralNetwork(),
   ]
   params = {
-    'loss': ['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron'],
+    'activation': ['relu', 'tanh'],
   }
   for model in models:
     print(f"Running {model.__class__.__name__}")

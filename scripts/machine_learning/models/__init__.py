@@ -4,5 +4,6 @@ from models.NearestCentroid import NearestCentroid
 from models.RandomForest import RandomForest
 from models.SupportVectorMachine import SupportVectorMachine
 from models.StochasticGradientDescent import StochasticGradientDescent
+from models.NeuralNetwork import NeuralNetwork
 
 from models.IModel import IModel
