@@ -7,22 +7,18 @@ from .IModel import IModel
 class KNearestNeighbors(IModel):
   def __init__(
       self,
-      k: int,
       labelName: Literal['shape', 'sample'] = 'shape',
       noise: bool = False
     ):
     """
     Initializes a KNearestNeighbors object.
 
-    Parameters:
-    - k (int): The number of nearest neighbors to consider.
-
     Returns:
     - None
     """
     self.labelName = labelName
     self.noise = noise
-    self.model = KNeighborsClassifier(n_neighbors=k)
+    self.model = KNeighborsClassifier()
 
   def train(self, df: DataFrame) -> None:
     """

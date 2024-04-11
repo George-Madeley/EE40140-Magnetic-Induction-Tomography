@@ -13,7 +13,7 @@ def runModels():
   """
   df_train, df_test, df_val = getData()
 
-  models = [KNearestNeighbors(3)]
+  models = [KNearestNeighbors()]
   params = {
       'n_neighbors': list(range(1, 22, 2)),
       'weights': ['uniform', 'distance'],
