@@ -1,120 +1,24 @@
 from typing import Literal
+from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier
 
 from .IModel import IModel
 
+
 class RandomForest(IModel):
   def __init__(
     self,
-    max_depth: int = None,
-    splitter: Literal['best', 'random'] = 'best',
-    criterion: Literal['gini', 'entropy'] = 'gini',
-    min_samples_split: float | int = 2,
-    min_samples_leaf: float | int = 1,
-    max_features: float | int | str = None,
-    n_estimators: int = 100,
+    labelName: Literal['shape', 'sample'] = 'shape',
+    noise: bool = False,
   ):
     """
-    Initialize the RandomForest model with the specified parameters.
+    Initializes a RandomForest object.
 
     Parameters:
-    - max_depth (int): The maximum depth of the tree. If None, the tree is fully grown.
-    - splitter (str): The strategy used to choose the split at each node. Can be 'best' or 'random'.
-    - criterion (str): The function to measure the quality of a split. Can be 'gini' or 'entropy'.
-    - min_samples_split (float or int): The minimum number of samples required to split an internal node.
-    - min_samples_leaf (float or int): The minimum number of samples required to be at a leaf node.
-    - max_features (float, int, or str): The number of features to consider when looking for the best split.
-    - n_estimators (int): The number of trees in the forest.
-
-    Returns:
-    None
+    - labelName: The name of the label to predict. Can be either 'shape' or 'sample'. Default is 'shape'.
+    - noise: Whether to add noise to the data. Default is False.
     """
-    super().enforceLiterals(self.__init__)
-    super().__init__()
-
-    self.randomForest = RandomForestClassifier(
-      max_depth=max_depth,
-      splitter=splitter,
-      criterion=criterion,
-      min_samples_split=min_samples_split,
-      min_samples_leaf=min_samples_leaf,
-      max_features=max_features,
-      n_estimators=n_estimators
-    )
-
-  def train(self, df_train, noise=False):
-    """
-    Trains the random forest model using the provided training data.
-
-    Args:
-      df_train (DataFrame): The training data as a pandas DataFrame.
-      noise (bool, optional): Flag indicating whether to include background noise in the training data. 
-                  Defaults to False.
-
-    Returns:
-      None
-    """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_train)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_train)
-
-    labels = super().getLabels(df_train)
-
-    self.randomForest.fit(values, labels)
-
-  def test(self, df_test, noise=False):
-    """
-    Test the random forest model on the given test dataset.
-
-    Parameters:
-    - df_test (DataFrame): The test dataset.
-    - noise (bool): Flag indicating whether to add background noise to the test dataset.
-
-    Returns:
-    - score (float): The accuracy score of the random forest model on the test dataset.
-    """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_test)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_test)
-
-    labels = super().getLabels(df_test)
-
-    score = self.randomForest.score(values, labels)
-
-    return score
-  
-  def predict(self, df_predict, noise=False):
-    """
-    Predicts the target variable for the given input data.
-
-    Args:
-      df_predict (pandas.DataFrame): The input data to make predictions on.
-      noise (bool, optional): Whether to add background noise to the input data. 
-                  Defaults to False.
-
-    Returns:
-      numpy.ndarray: The predicted target variable values.
-    """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_predict)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_predict)
-
-    return self.randomForest.predict(values)
-  
-  @staticmethod
-  def isParamValid(self, name: str, value: str) -> bool:
-    """
-    Check if the parameter is valid
-
-    :param name: name of the parameter
-    :param value: value of the parameter
-
-    :return: boolean
-    """
-    validParams = {
+    self.validParams = {
       'n_estimators': list(range(1, 1001)),
       'criterion': ['gini', 'entropy', 'log_loss'],
       'max_depth': list(range(1, 101)),
@@ -122,12 +26,55 @@ class RandomForest(IModel):
       'min_samples_leaf': list(range(1, 21)),
       'max_features': ['sqrt', 'log2', None],
       'max_leaf_nodes': list(range(2, 101)),
-      'min_impurity_decrease': list(range(0, 1, 0.01)),
+      'min_impurity_decrease': [x / 100 for x in range(0, 101)],
     }
+    self.labelName = labelName
+    self.noise = noise
+    self.model = RandomForestClassifier()
 
-    if name in validParams.keys() and value in validParams.get(name, []):
-      return True
-    return False
+  def train(self, df: DataFrame) -> None:
+    """
+    Trains the random forest model using the provided DataFrame.
+
+    Args:
+      df (DataFrame): The input DataFrame containing the training data.
+
+    Returns:
+      None
+    """
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+
+    self.randomForest.fit(values, labels)
+
+  def test(self, df: DataFrame) -> float:
+    """
+    Test the random forest model on the given DataFrame.
+
+    Args:
+      df (DataFrame): The DataFrame containing the test data.
+
+    Returns:
+      float: The score of the random forest model on the test data.
+    """
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+
+    score = self.randomForest.score(values, labels)
+
+    return score
+  
+  def predict(self, df: DataFrame) -> list:
+    """
+    Predicts the labels for the given DataFrame using the trained random forest model.
+
+    Args:
+      df (DataFrame): The input DataFrame containing the features.
+
+    Returns:
+      list: The predicted labels for the input DataFrame.
+    """
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+
+    return self.randomForest.predict(values)
   
   def getDefaultParams(self) -> dict:
     """

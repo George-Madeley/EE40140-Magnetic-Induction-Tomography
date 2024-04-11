@@ -1,4 +1,5 @@
 from typing import Literal
+from pandas import DataFrame
 from sklearn.tree import DecisionTreeClassifier
 
 from .IModel import IModel
@@ -6,108 +7,17 @@ from .IModel import IModel
 class DecisionTree(IModel):
   def __init__(
     self,
-    max_depth: int = None,
-    splitter: Literal['best', 'random'] = 'best',
-    criterion: Literal['gini', 'entropy'] = 'gini',
-    min_samples_split: float | int = 2,
-    min_samples_leaf: float | int = 1,
-    max_features: float | int | str = None,
+    labelName: Literal['shape', 'sample'] = 'shape',
+    noise: bool = False
   ):
     """
-    Initialize a DecisionTrees object.
+    Initialize a DecisionTree object.
 
     Args:
-      max_depth (int, optional): The maximum depth of the decision tree. Defaults to None.
-      splitter (Literal['best', 'random'], optional): The strategy used to choose the split at each node. Defaults to 'best'.
-      criterion (Literal['gini', 'entropy'], optional): The function to measure the quality of a split. Defaults to 'gini'.
-      min_samples_split (float | int, optional): The minimum number of samples required to split an internal node. Defaults to 2.
-      min_samples_leaf (float | int, optional): The minimum number of samples required to be at a leaf node. Defaults to 1.
-      max_features (float | int | str, optional): The number of features to consider when looking for the best split. Defaults to None.
+        labelName (Literal['shape', 'sample'], optional): The name of the label to predict. Defaults to 'shape'.
+        noise (bool, optional): Whether to add noise to the data. Defaults to False.
     """
-    super().enforceLiterals(self.__init__)
-    super().__init__()
-
-    self.dtree = DecisionTreeClassifier(
-      max_depth=max_depth,
-      splitter=splitter,
-      criterion=criterion,
-      min_samples_split=min_samples_split,
-      min_samples_leaf=min_samples_leaf,
-      max_features=max_features
-    )
-
-  def train(self, df_train, noise=False):
-    """
-    Trains the decision tree model using the provided training data.
-
-    Args:
-      df_train (DataFrame): The training data as a pandas DataFrame.
-      noise (bool, optional): Flag indicating whether to include background noise in the training data.
-
-    Returns:
-      None
-    """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_train)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_train)
-
-    labels = super().getLabels(df_train)
-
-    self.dtree.fit(values, labels)
-
-  def test(self, df_test, noise=False):
-    """
-    Test the decision tree model on a given test dataset.
-
-    Parameters:
-    - df_test (pandas.DataFrame): The test dataset to evaluate the model on.
-    - noise (bool): Flag indicating whether to add background noise to the test dataset.
-
-    Returns:
-    - score (float): The accuracy score of the model on the test dataset.
-    """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_test)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_test)
-
-    labels = super().getLabels(df_test)
-
-    score = self.dtree.score(values, labels)
-
-    return score
-  
-  def predict(self, df_predictions, noise=False):
-    """
-    Predicts the target variable for the given input data.
-
-    Args:
-      df_predictions (pandas.DataFrame): The input data for making predictions.
-      noise (bool, optional): Flag indicating whether to add background noise to the input data. 
-                  Defaults to False.
-
-    Returns:
-      numpy.ndarray: The predicted target variable values.
-    """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_predictions)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_predictions)
-
-    return self.dtree.predict(values)
-  
-  @staticmethod
-  def isParamValid(self, name: str, value: str) -> bool:
-    """
-    Check if the parameter is valid
-
-    :param name: name of the parameter
-    :param value: value of the parameter
-
-    :return: boolean
-    """
-    validParams = {
+    self.validParams = {
       "criterion": ["gini", "entropy", "log_loss"],
       "splitter": ["best", "random"],
       "max_depth": list(range(1, 1001)),
@@ -116,10 +26,53 @@ class DecisionTree(IModel):
       "max_features": ["sqrt", "log2"],
       "max_leaf_nodes": list(range(1, 1001))
     }
+    self.labelName = labelName
+    self.noise = noise
+    self.model = DecisionTreeClassifier()
 
-    if name in validParams.keys() and value in validParams.get(name, []):
-      return True
-    return False
+  def train(self, df: DataFrame) -> None:
+    """
+    Trains the decision tree model using the provided DataFrame.
+
+    Args:
+      df (DataFrame): The input DataFrame containing the training data.
+
+    Returns:
+      None
+    """
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+
+    self.model.fit(values, labels)
+
+  def test(self, df: DataFrame) -> float:
+    """
+    Test the decision tree model on the given DataFrame and return the accuracy score.
+
+    Parameters:
+    - df (DataFrame): The DataFrame containing the test data.
+
+    Returns:
+    - float: The accuracy score of the decision tree model on the test data.
+    """
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+
+    score = self.model.score(values, labels)
+
+    return score
+  
+  def predict(self, df: DataFrame) -> list:
+    """
+    Predicts the labels for the given DataFrame using the trained model.
+
+    Args:
+      df (DataFrame): The input DataFrame containing the feature values.
+
+    Returns:
+      list: The predicted labels for the input DataFrame.
+    """
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+
+    return self.model.predict(values)
   
   def getDefaultParams(self) -> dict:
     """

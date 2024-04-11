@@ -16,6 +16,15 @@ class KNearestNeighbors(IModel):
     Returns:
     - None
     """
+    self.validParams = {
+      'weights': ['uniform', 'distance'],
+      'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
+      'leaf_size': list(range(1, 101)),
+      'p': [1, 2],
+      'metric': ['minkowski', 'euclidean', 'manhattan', 'chebyshev'],
+      'n_jobs': [-1, None],
+      'n_neighbors': list(range(1, 101)),
+    }
     self.labelName = labelName
     self.noise = noise
     self.model = KNeighborsClassifier()
@@ -60,28 +69,6 @@ class KNearestNeighbors(IModel):
     predictions = self.model.predict_proba(values)
 
     return predictions, labels
-
-  def isParamValid(self, name: str) -> bool:
-    """
-    Check if the parameter is valid
-
-    :param name: name of the parameter
-
-    :return: boolean
-    """
-    validParams = [
-      'weights',
-      'algorithm',
-      'leaf_size'
-      'p',
-      'metric',
-      'n_jobs',
-      'n_neighbors'
-    ]
-
-    if name in validParams:
-      return True
-    return False
 
   def getDefaultParams(self) -> dict:
     """

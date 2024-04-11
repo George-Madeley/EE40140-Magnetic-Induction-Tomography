@@ -3,6 +3,8 @@ from typing import Literal
 from sklearn.model_selection import GridSearchCV
 
 from models.KNearestNeighbors import KNearestNeighbors
+from models.RandomForest import RandomForest
+from models.DecisionTree import DecisionTree
 
 import pandas as pd
 
@@ -13,11 +15,14 @@ def runModels():
   """
   df_train, df_test, df_val = getData()
 
-  models = [KNearestNeighbors()]
+  models = [
+    KNearestNeighbors(),
+    RandomForest(),
+    DecisionTree(),
+  ]
   params = {
       'n_neighbors': list(range(1, 22, 2)),
-      'weights': ['uniform', 'distance'],
-      'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute']
+      'max_depth': list(range(1, 22, 2)),
   }
   for model in models:
     model.varyParams(

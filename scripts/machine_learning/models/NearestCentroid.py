@@ -1,96 +1,76 @@
 from sklearn.neighbors import NearestCentroid as NearestCentroidClassifier
 
 from pandas import DataFrame
-from typing import List
+from typing import List, Literal
 
 from .IModel import IModel
 
 class NearestCentroid(IModel):
-  def __init__(self):
-    self.model = self.createModel()
-
-  def createModel(self) -> NearestCentroidClassifier:
+  def __init__(
+    self,
+    labelName: Literal['shape', 'sample'] = 'shape',
+    noise: bool = False
+  ):
     """
-    Create a nearest centroid model
+    Initialize the NearestCentroid model.
 
-    :return: model
+    Args:
+      labelName (Literal['shape', 'sample'], optional): The name of the label to use for classification. Defaults to 'shape'.
+      noise (bool, optional): Whether to add noise to the data. Defaults to False.
     """
-    model = NearestCentroidClassifier()
-    return model
+    self.validParams = {
+      'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
+      'shrink_threshold': ['None']
+    }
+    self.labelName = labelName
+    self.noise = noise
+    self.model = NearestCentroidClassifier()
 
-  def train(self, df_train: DataFrame, noise: bool = False) -> None:
+  def train(self, df: DataFrame) -> None:
     """
-    Train the model
+    Trains the NearestCentroid model using the provided DataFrame.
 
-    :param df_train: training dataframe
-    :param noise: whether to include background noise
+    Args:
+      df (DataFrame): The input DataFrame containing the training data.
+
+    Returns:
+      None
     """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_train)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_train)
-
-    labels = super().getLabels(df_train)
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
 
     self.model.fit(values, labels)
 
-  def test(self, df_test: DataFrame, noise: bool = False) -> float:
+  def test(self, df: DataFrame) -> float:
     """
-    Test the model
+    Test the model using the provided DataFrame.
 
-    :param df_test: test dataframe
-    :param noise: whether to include background noise
+    Args:
+      df (DataFrame): The DataFrame containing the test data.
 
-    :return: score
+    Returns:
+      float: The score of the model on the test data.
     """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_test)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_test)
-
-    labels = super().getLabels(df_test)
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
 
     score = self.model.score(values, labels)
 
     return score
 
-  def predict(self, df_predictions: DataFrame, noise: bool) -> List:
+  def predict(self, df: DataFrame) -> List:
     """
-    Predict the labels of the test data
+    Predicts the labels for the given DataFrame using the trained model.
 
-    :param df_predictions: dataframe of predictions
-    :param noise: whether to include background noise
+    Args:
+      df (DataFrame): The input DataFrame containing the feature values.
 
-    :return: predictions
+    Returns:
+      List: The predicted labels for the input DataFrame.
     """
-    if noise:
-      values = super().getValuesWithBackgroundNoise(df_predictions)
-    else:
-      values = super().getValuesWithoutBackgroundNoise(df_predictions)
+    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
 
     predictions = self.model.predict(values)
 
     return predictions
-
-  @staticmethod
-  def isParamValid(self, name: str, value: str) -> bool:
-    """
-    Check if the parameter is valid
-
-    :param name: name of the parameter
-    :param value: value of the parameter
-
-    :return: boolean
-    """
-    
-    validParams = {
-      'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
-      'shrink_threshold': ['None']
-    }
-
-    if name in validParams.keys() and value in validParams.get(name, []):
-      return True
-    return False
   
   def getDefaultParams(self) -> dict:
     """

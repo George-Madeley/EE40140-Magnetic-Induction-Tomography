@@ -41,18 +41,6 @@ class IModel(ABC):
     pass
 
   @abstractmethod
-  def isParamValid(self, name, value):
-    """
-    Check if the parameter is valid
-
-    :param name: name of the parameter
-    :param value: value of the parameter
-
-    :return: boolean
-    """
-    pass
-
-  @abstractmethod
   def getDefaultParams(self):
     """
     Get the default parameters
@@ -142,6 +130,19 @@ class IModel(ABC):
       index=False
     )
 
+  def isParamValid(self, name, value=None):
+    """
+    Check if the parameter is valid
+
+    :param name: name of the parameter
+    :param value: value of the parameter
+
+    :return: boolean
+    """
+    if name in self.validParams.keys():
+      return True
+    return False
+
   def getValuesAndLabels(
     self,
     df,
@@ -165,7 +166,7 @@ class IModel(ABC):
 
     values = df[valueColumnNames].values
 
-    labelColumnNames = [col for col in df.columns if col.startswith(labelName)]
+    labelColumnNames = [col for col in df.columns if col.startswith(labelName + '_')]
     labels = df[labelColumnNames].values
 
     return values, labels
