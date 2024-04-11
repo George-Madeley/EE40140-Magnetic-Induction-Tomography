@@ -15,10 +15,10 @@ def runModels():
   df_train, df_test, df_val = getData()
 
   models = [
-    SupportVectorMachine(oneHotEncode=False),
+    StochasticGradientDescent(),
   ]
   params = {
-    'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+    'loss': ['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron'],
   }
   for model in models:
     print(f"Running {model.__class__.__name__}")

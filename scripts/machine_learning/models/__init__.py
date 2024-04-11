@@ -3,5 +3,6 @@ from models.KNearestNeighbors import KNearestNeighbors
 from models.NearestCentroid import NearestCentroid
 from models.RandomForest import RandomForest
 from models.SupportVectorMachine import SupportVectorMachine
+from models.StochasticGradientDescent import StochasticGradientDescent
 
 from models.IModel import IModel
