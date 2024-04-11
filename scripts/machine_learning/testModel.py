@@ -1,3 +1,4 @@
+import os
 from typing import Literal
 
 from sklearn.model_selection import GridSearchCV
@@ -41,7 +42,8 @@ def getData(material: Literal['iron', 'copper'] = 'iron'):
 
   :return: the data
   """
-  df = pd.read_csv(f"./data/data_samples_{material}.csv")
+  dataFilePath = os.path.join('data', f'data_samples_{material}.csv')
+  df = pd.read_csv(dataFilePath)
   df_train = df[df['set'] == 'train']
   df_test = df[df['set'] == 'test']
   df_val = df[df['set'] == 'val']

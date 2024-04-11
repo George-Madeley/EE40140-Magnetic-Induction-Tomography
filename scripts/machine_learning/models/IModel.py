@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import os
 from random import choice
 from string import ascii_letters
 from sys import _getframe
@@ -124,9 +125,10 @@ class IModel(ABC):
       [choice(ascii_letters) for i in range(10)]
     )
 
+    saveFilePath = os.path.join('results', f'{self.__class__.__name__}_results_{randomString}.csv')
     # Save the results to a CSV file
     df_results.to_csv(
-      f'./results/{self.__class__.__name__}_results_{randomString}.csv',
+      saveFilePath,
       index=False
     )
 
