@@ -154,8 +154,12 @@ class cleanUp:
     :param feature: The feature to one-hot encode.
     :return: The dataset with the one-hot encoded feature.
     """
+    feature_column = df[feature]
     # One-hot encode the feature
     df = pd.get_dummies(df, columns=[feature])
+
+    # Add the one-hot encoded feature to the dataset
+    df[feature] = feature_column
 
     return df
 
