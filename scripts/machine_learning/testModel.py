@@ -3,9 +3,7 @@ from typing import Literal
 
 from sklearn.model_selection import GridSearchCV
 
-from models.KNearestNeighbors import KNearestNeighbors
-from models.RandomForest import RandomForest
-from models.DecisionTree import DecisionTree
+from models import *
 
 import pandas as pd
 
@@ -17,13 +15,10 @@ def runModels():
   df_train, df_test, df_val = getData()
 
   models = [
-    KNearestNeighbors(),
-    RandomForest(),
-    DecisionTree(),
+    SupportVectorMachine(oneHotEncode=False),
   ]
   params = {
-      'n_neighbors': list(range(1, 22, 2)),
-      'max_depth': list(range(1, 22, 2)),
+    'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
   }
   for model in models:
     print(f"Running {model.__class__.__name__}")
