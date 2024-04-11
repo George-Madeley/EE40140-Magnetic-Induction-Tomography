@@ -5,13 +5,16 @@ from string import ascii_letters
 from sys import _getframe
 from typing import Literal, get_args, get_origin
 
-from pandas import DataFrame, concat
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from matplotlib import pyplot as plt
+from pandas import DataFrame, concat
+import numpy as np
+import torch
 
 
 class IModel(ABC):
   @abstractmethod
-  def train(self, train_df):
+  def train(self, df: DataFrame) -> None:
     """
     Train the model
 
@@ -20,7 +23,7 @@ class IModel(ABC):
     pass
 
   @abstractmethod
-  def test(self, test_df):
+  def test(self, df: DataFrame) -> None:
     """
     Test the model
 
@@ -31,7 +34,7 @@ class IModel(ABC):
     pass
 
   @abstractmethod
-  def predict(self, predict_df):
+  def predict(self, df: DataFrame) -> None:
     """
     Predict the labels of the test data
 
@@ -59,7 +62,7 @@ class IModel(ABC):
       if get_origin(
         type_) is Literal and name in kwargs and value not in options:
         raise AssertionError(f"'{value}' is not in {options} for '{name}'")
-      
+
   def varyParams(
       self,
       df: DataFrame,
@@ -104,7 +107,6 @@ class IModel(ABC):
     )
     clf.fit(values, labels)
 
-
     df_results = concat(
       [
         DataFrame(clf.cv_results_['params'])
@@ -125,14 +127,15 @@ class IModel(ABC):
       [choice(ascii_letters) for i in range(10)]
     )
 
-    saveFilePath = os.path.join('results', f'{self.__class__.__name__}_results_{randomString}.csv')
+    saveFilePath = os.path.join(
+        'results', f'{self.__class__.__name__}_results_{randomString}.csv')
     # Save the results to a CSV file
     df_results.to_csv(
       saveFilePath,
       index=False
     )
 
-  def isParamValid(self, name, value=None):
+  def isParamValid(self, name: str, value=None):
     """
     Check if the parameter is valid
 
@@ -147,7 +150,7 @@ class IModel(ABC):
 
   def getValuesAndLabels(
     self,
-    df,
+    df: DataFrame,
   ):
     """
     Get the values and labels from the dataframe
@@ -166,9 +169,67 @@ class IModel(ABC):
     values = df[valueColumnNames].values
 
     if self.oneHotEncode:
-      labelColumnNames = [col for col in df.columns if col.startswith(self.labelName + '_')]
+      labelColumnNames = [
+          col for col in df.columns if col.startswith(
+              self.labelName + '_')]
       labels = df[labelColumnNames].values
     else:
       labels = df[self.labelName].values
 
     return values, labels
+
+  def getImages(
+      self,
+      df: DataFrame,
+      downScaleFactor: int = 1
+  ):
+    """
+    Get the images from the dataframe
+
+    :param df: dataframe
+
+    :return: images
+    """
+    # Define the original width and height
+    originalWidth = 640
+    originalHeight = 480
+
+    # Define the new width and height
+    newWidth = originalWidth // downScaleFactor
+    newHeight = originalHeight // downScaleFactor
+
+    outputImages = torch.zeros((len(df), 1, originalHeight, originalWidth))
+
+    for i, row in df.iterrows():
+        # Get the filename
+      imageFilename = row['cc_filename']
+
+      imageFilePath = os.path.join(
+          'images',
+          'processed',
+          f'{newHeight}x{newWidth}',
+          imageFilename)
+
+      # Read the .png file
+      image = plt.imread(imageFilePath)
+      # Average the first three channels
+      image = np.mean(image[:, :, :3], axis=2)
+
+      # Find all the zero values and replace them with 0.01
+      zero_values = image == 0
+      image[zero_values] = 0.01
+
+      # Find all the one values nd replace them with 0.99
+      one_values = image == 1
+      image[one_values] = 0.99
+
+      # Convert the image to a PyTorch tensor
+      image_tensor = torch.from_numpy(image).float()
+
+      # Reshape the tensor to the expected input shape
+      image_tensor = image_tensor.view(1, newHeight, newWidth)
+
+      # Add the image to the outputImages array
+      outputImages[i] = image_tensor
+
+    return outputImages
