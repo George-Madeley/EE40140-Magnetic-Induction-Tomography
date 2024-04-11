@@ -26,6 +26,7 @@ def runModels():
       'max_depth': list(range(1, 22, 2)),
   }
   for model in models:
+    print(f"Running {model.__class__.__name__}")
     model.varyParams(
         df_train,
         params,
