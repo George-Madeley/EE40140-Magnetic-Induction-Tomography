@@ -15,13 +15,16 @@ def runModels():
 
   models = [KNearestNeighbors(3)]
   params = {
-      'n_neighbors': list(range(1, 22, 2))
+      'n_neighbors': list(range(1, 22, 2)),
+      'weights': ['uniform', 'distance'],
+      'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute']
   }
   for model in models:
     model.varyParams(
         df_train,
         params,
-        searchCV=GridSearchCV
+        searchCV=GridSearchCV,
+        verbose=2,
     )
 
 

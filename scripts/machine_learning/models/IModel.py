@@ -1,6 +1,11 @@
 from abc import ABC, abstractmethod
+from random import choice
+from string import ascii_letters
 from sys import _getframe
 from typing import Literal, get_args, get_origin
+
+from pandas import DataFrame, concat
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 
 
 class IModel(ABC):
@@ -36,15 +41,6 @@ class IModel(ABC):
     pass
 
   @abstractmethod
-  def varyParams(self, params):
-    """
-    Vary the parameters of the model
-
-    :param params: parameters
-    """
-    pass
-
-  @abstractmethod
   def isParamValid(self, name, value):
     """
     Check if the parameter is valid
@@ -74,6 +70,77 @@ class IModel(ABC):
       if get_origin(
         type_) is Literal and name in kwargs and value not in options:
         raise AssertionError(f"'{value}' is not in {options} for '{name}'")
+      
+  def varyParams(
+      self,
+      df: DataFrame,
+      params: dict,
+      searchCV: type[GridSearchCV | RandomizedSearchCV],
+      scoring: dict = None,
+      n_jobs: int = -1,
+      verbose: int = 0
+    ) -> None:
+    """
+    Vary the parameters of the model
+
+    :param params: parameters
+    """
+    validParams = {}
+    for param in params.keys():
+      if self.isParamValid(param):
+        validParams[param] = params[param]
+
+    if validParams == {}:
+      print(
+        f'No valid parameters to vary for for {self.__class__.__name__} model.')
+
+    if scoring is None:
+      scoring = {
+        'Precision': 'precision_micro',
+        'Recall': 'recall_micro',
+        'Accuracy': 'accuracy',
+        'F1': 'f1_micro',
+        'AUC': 'roc_auc',
+      }
+
+    values, labels = self.getValuesAndLabels(df, self.labelName, self.noise)
+
+    clf = searchCV(
+      self.model,
+      validParams,
+      scoring=scoring,
+      n_jobs=n_jobs,
+      verbose=verbose,
+      refit=False
+    )
+    clf.fit(values, labels)
+
+
+    df_results = concat(
+      [
+        DataFrame(clf.cv_results_['params'])
+      ] + [
+        DataFrame(
+          clf.cv_results_[f'mean_test_{metric}'],
+          columns=[metric]
+        ) for metric in scoring.keys()
+      ],
+      axis=1
+    )
+
+    # Add the column 'model' to the dataframe and set it to the model name
+    df_results.insert(0, 'model', self.__class__.__name__)
+
+    # Generate a random string
+    randomString = ''.join(
+      [choice(ascii_letters) for i in range(10)]
+    )
+
+    # Save the results to a CSV file
+    df_results.to_csv(
+      f'./results/{self.__class__.__name__}_results_{randomString}.csv',
+      index=False
+    )
 
   def getValuesAndLabels(
     self,
