@@ -9,8 +9,10 @@ def toGreyscale(image: np.ndarray) -> np.ndarray:
 
   :return: the greyscale image (numpy array)
   """
-  return 0.2126 * image[:, :, 0] + 0.7152 * \
-      image[:, :, 1] + 0.0722 * image[:, :, 2]
+  r_ch = image[:, :, 0]
+  g_ch = image[:, :, 1]
+  b_ch = image[:, :, 2]
+  return 0.2126 * r_ch + 0.7152 * g_ch + 0.0722 * b_ch
 
 
 def toBinary(image: np.ndarray, threshold: float) -> np.ndarray:
@@ -22,7 +24,14 @@ def toBinary(image: np.ndarray, threshold: float) -> np.ndarray:
 
   :return: the binary image (numpy array)
   """
-  return image > threshold
+
+  # If the pixel value is greater than the threshold, set it to 1, otherwise set it to 0
+  newImage = np.where(image > threshold, 1, 0)
+
+  # Change the data type of newImage to np.uint8
+  newImage = newImage.astype(np.uint8)
+
+  return newImage
 
 
 def removeBackground(
@@ -45,8 +54,8 @@ def removeBackground(
   # Convert the reference image to binary
   ref_image = toBinary(ref_image, 0.5)
 
-  # invert the reference image
-  ref_image = ~ref_image
+  # Set all the pixels that are 1 to 0 and vice versa
+  ref_image = 1 - ref_image
 
   # Set the left and right sides of the image to 1
   ref_image[:, :50] = 1

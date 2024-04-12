@@ -12,7 +12,6 @@ from preprocessing.utils import getCommonFactors, checkForProcessedFactors
 
 
 def preprocessAllImages() -> None:
-  
   """
   Preprocesses all images in the dataset.
 
@@ -26,12 +25,13 @@ def preprocessAllImages() -> None:
   Returns:
       None
   """
+  cleanUp.deleteImages()
+
   df = cleanUp.cleanUp()
 
   imageWidth: int = 640
   imageHeight: int = 480
   commonFactors: List[int] = getCommonFactors(imageWidth, imageHeight)
-
 
   for idx in range(len(commonFactors)):
     factor: int = commonFactors[idx]
@@ -57,6 +57,7 @@ def preprocessAllImages() -> None:
       # Get the filename
       bb_filename: str = row['bb_filename']
       cc_filename: str = row['cc_filename']
+      cutoff: float = row['cutoff']
       sample: str = row['sample']
 
       savePath: str = os.path.join(directory, cc_filename)
@@ -69,7 +70,12 @@ def preprocessAllImages() -> None:
 
       # Preprocess the image
       image: np.ndarray = Preprocess(
-          bb_filename, cc_filename, downsampleFactor=factor)
+          bb_filename,
+          cc_filename,
+          sample,
+          downsampleFactor=factor,
+          cutoff=cutoff
+      )
 
       # save image
       plt.imsave(savePath, image, cmap='gray')
@@ -81,19 +87,23 @@ def preprocessAllImages() -> None:
   for idx, material_df in enumerate(material_dfs):
     material = 'iron' if idx == 0 else 'copper'
     feature = 'shape' if idx == 0 else 'sample'
-    material_df = formatting.getEvenDistribution(material_df, distFeature=feature)
+    material_df = formatting.getEvenDistribution(
+      material_df, distFeature=feature)
     material_df = formatting.splitDataframeFeature(material_df, feature)
     material_df = formatting.oneHotEncode(material_df, feature)
     material_df.to_csv(f'./data/data_samples_{material}.csv', index=False)
 
   print('Preprocessing complete.')
 
+
 def Preprocess(
   bb_filename: str,
   cc_filename: str,
+  sample: str,
   kernelSize: int = 5,
-  cutoff: float = 0.5,
-        downsampleFactor: int = 1) -> np.ndarray:
+  cutoff: float = 0.75,
+  downsampleFactor: int = 1
+) -> np.ndarray:
   """
   Preprocesses an image by performing various operations such as greyscale conversion, binary conversion,
   background removal, morphological filtering, and downsampling.
@@ -120,10 +130,13 @@ def Preprocess(
   # convert to greyscale
   image = colourFiltering.toGreyscale(image)
 
-  # convert to binary
+  # remove background
+  if sample == '0':
+    image /= image
+    return image
+
   image = colourFiltering.toBinary(image, cutoff)
 
-  # remove background
   image = colourFiltering.removeBackground(
       image, f'{imageDirectory}/{bb_filename}')
 
@@ -144,3 +157,6 @@ def Preprocess(
 
 if __name__ == '__main__':
   preprocessAllImages()
+
+
+

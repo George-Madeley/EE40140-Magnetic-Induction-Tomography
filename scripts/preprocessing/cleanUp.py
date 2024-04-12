@@ -135,3 +135,23 @@ def checkForMissingImages(df: pd.DataFrame) -> None:
     print(f"\033[91mERROR: The following images are missing from the 'original' directory: \033[0m")
     for image_name in missing_images:
       print(image_name)
+
+def deleteImages():
+  """
+  Delete all the images in the processed directory that are not in the 480x640
+  directory.
+  """
+
+  # Get the list of images in the 480x640 directory
+  image_names = os.listdir(os.path.join('images', 'processed', '480x640'))
+
+  factors = [2, 4, 5, 8, 10, 16, 20, 32]
+
+  # Delete all the images in the processed directory that are not in the 480x640 directory
+  for factor in factors:
+    fileDir = os.path.join('images', 'processed', f'{480//factor}x{640//factor}')
+    processed_images = os.listdir(fileDir)
+    for image_name in processed_images:
+      if image_name not in image_names:
+        print(f"Deleting {image_name} from {480//factor}x{640//factor}")
+        os.remove(os.path.join(fileDir, image_name))

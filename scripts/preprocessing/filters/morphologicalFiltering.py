@@ -1,4 +1,4 @@
-from skimage.morphology import erosion, dilation, opening, closing, square
+import skimage
 import numpy as np
 
 def erosion(image: np.ndarray, size: int = 3) -> np.ndarray:
@@ -10,7 +10,8 @@ def erosion(image: np.ndarray, size: int = 3) -> np.ndarray:
 
   :return: the eroded image (numpy array)
   """
-  return erosion(image.astype(bool), selem=square(size)).astype(image.dtype)
+  kernel = np.ones((size, size))
+  return skimage.morphology.erosion(image.astype(bool), kernel).astype(image.dtype)
 
 
 def dilation(image: np.ndarray, size: int = 3) -> np.ndarray:
@@ -22,7 +23,8 @@ def dilation(image: np.ndarray, size: int = 3) -> np.ndarray:
 
   :return: the dilated image (numpy array)
   """
-  return dilation(image.astype(bool), selem=square(size)).astype(image.dtype)
+  kernel = np.ones((size, size))
+  return skimage.morphology.dilation(image.astype(bool), kernel).astype(image.dtype)
 
 
 def opening(image: np.ndarray, size: int = 3) -> np.ndarray:
@@ -34,7 +36,8 @@ def opening(image: np.ndarray, size: int = 3) -> np.ndarray:
 
   :return: the opened image (numpy array)
   """
-  return opening(image.astype(bool), square(size)).astype(image.dtype)
+  kernel = np.ones((size, size))
+  return skimage.morphology.opening(image.astype(bool), kernel).astype(image.dtype)
 
 
 def closing(image: np.ndarray, size: int = 3) -> np.ndarray:
@@ -46,4 +49,5 @@ def closing(image: np.ndarray, size: int = 3) -> np.ndarray:
 
   :return: the closed image (numpy array)
   """
-  return closing(image.astype(bool), square(size)).astype(image.dtype)
+  kernel = np.ones((size, size))
+  return skimage.morphology.closing(image.astype(bool), kernel).astype(image.dtype)
