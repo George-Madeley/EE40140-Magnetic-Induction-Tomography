@@ -22,7 +22,7 @@
       "name": "Test Models",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/scripts/machine_learning/testModel.py",
+      "program": "${workspaceFolder}/scripts/machine_learning/classification.py",
       "console": "integratedTerminal"
     },
   ]
