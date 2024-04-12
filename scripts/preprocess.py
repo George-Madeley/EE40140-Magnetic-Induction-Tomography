@@ -5,10 +5,11 @@ from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 
-from colourFiltering import ColourFiltering
-from frequencyFiltering import FrequencyFiltering
-from morphologicalFiltering import MorphologicalFiltering
-from cleanUp import cleanUp
+from preprocessing import cleanUp
+from preprocessing import formatting
+from preprocessing.filters import colourFiltering, morphologicalFiltering
+from preprocessing.utils import getCommonFactors, checkForProcessedFactors
+
 
 def preprocessAllImages() -> None:
   
@@ -25,7 +26,7 @@ def preprocessAllImages() -> None:
   Returns:
       None
   """
-  df = cleanUp.main()
+  df = cleanUp.cleanUp()
 
   imageWidth: int = 640
   imageHeight: int = 480
@@ -41,7 +42,6 @@ def preprocessAllImages() -> None:
 
     if checkForProcessedFactors(nextFactor, imageWidth, imageHeight):
       continue
-
 
     newWidth: int = imageWidth // factor
     newHeight: int = imageHeight // factor
@@ -74,77 +74,19 @@ def preprocessAllImages() -> None:
       # save image
       plt.imsave(savePath, image, cmap='gray')
 
-  df = cleanUp.normalise(df)
+  df = formatting.normalise(df)
 
-  df_iron, df_copper = cleanUp.splitDataframeMaterial(df)
+  material_dfs = formatting.splitDataframeMaterial(df)
 
-  df_iron = cleanUp.getEvenDistribution(df_iron, distFeature='shape')
-  df_iron = cleanUp.splitDataframe(df_iron, 'shape')
-  df_iron = cleanUp.oneHotEncode(df_iron, 'shape')
-
-  df_copper = cleanUp.getEvenDistribution(df_copper, distFeature='sample')
-  df_copper = cleanUp.splitDataframe(df_copper, 'sample')
-  df_copper = cleanUp.oneHotEncode(df_copper, 'sample')
-
-  df_copper.to_csv('./data/data_samples_copper.csv', index=False)
-  df_iron.to_csv('./data/data_samples_iron.csv', index=False)
+  for idx, material_df in enumerate(material_dfs):
+    material = 'iron' if idx == 0 else 'copper'
+    feature = 'shape' if idx == 0 else 'sample'
+    material_df = formatting.getEvenDistribution(material_df, distFeature=feature)
+    material_df = formatting.splitDataframeFeature(material_df, feature)
+    material_df = formatting.oneHotEncode(material_df, feature)
+    material_df.to_csv(f'./data/data_samples_{material}.csv', index=False)
 
   print('Preprocessing complete.')
-
-
-def getCommonFactors(a: int, b: int, maxFactor: int = 32) -> List[int]:
-  """
-  Returns a list of common factors between two numbers within a specified range.
-
-  Parameters:
-  a (int): The first number.
-  b (int): The second number.
-  maxFactor (int, optional): The maximum factor to consider. Defaults to 32.
-
-  Returns:
-  list: A list of common factors between a and b.
-
-  """
-  factors: List[int] = []
-  for i in range(1, min(a, b) + 1):
-    if i > maxFactor:
-      break
-
-    if a % i == 0 and b % i == 0:
-      factors.append(i)
-  return factors
-
-
-def checkForProcessedFactors(
-  nextFactor: int,
-  imageWidth: int,
-        imageHeight: int) -> bool:
-  """
-  Checks if the images have already been processed for a given factor.
-
-  Args:
-      nextFactor (int): The next factor to be checked.
-      imageWidth (int): The width of the original image.
-      imageHeight (int): The height of the original image.
-
-  Returns:
-      bool: True if the images have already been processed for the given factor, False otherwise.
-  """
-  # If the next factor directory exists, then the images have already been
-  # processed for this factor. Skip to the next factor
-  if nextFactor is not None:
-    newWidth: int = imageWidth // nextFactor
-    newHeight: int = imageHeight // nextFactor
-    directory: str = os.path.join(
-        os.getcwd(),
-        'images',
-        'processed',
-        f'{newHeight}x{newWidth}')
-
-    if os.path.exists(directory):
-      return True
-  return False
-
 
 def Preprocess(
   bb_filename: str,
@@ -176,26 +118,26 @@ def Preprocess(
   image: np.ndarray = np.array(plt.imread(imagePath))
 
   # convert to greyscale
-  image = ColourFiltering.toGreyscale(image)
+  image = colourFiltering.toGreyscale(image)
 
   # convert to binary
-  image = ColourFiltering.toBinary(image, cutoff)
+  image = colourFiltering.toBinary(image, cutoff)
 
   # remove background
-  image = ColourFiltering.removeBackground(
+  image = colourFiltering.removeBackground(
       image, f'{imageDirectory}/{bb_filename}')
 
   # convert to binary
-  image = ColourFiltering.toBinary(image, cutoff)
+  image = colourFiltering.toBinary(image, cutoff)
 
   # apply opening
-  image = MorphologicalFiltering.opening(image, kernelSize)
+  image = morphologicalFiltering.opening(image, kernelSize)
 
   # apply closing
-  image = MorphologicalFiltering.closing(image, kernelSize)
+  image = morphologicalFiltering.closing(image, kernelSize)
 
   # downsample
-  image = ColourFiltering.downSample(image, downsampleFactor)
+  image = colourFiltering.downSample(image, downsampleFactor)
 
   return image
 

@@ -12,10 +12,10 @@
       "console": "integratedTerminal"
     },
     {
-        "name": "Preprocessing Script",
+        "name": "Preprocess",
         "type": "debugpy",
         "request": "launch",
-        "program": "${workspaceFolder}/scripts/preprocessing/preprocessing.py",
+        "program": "${workspaceFolder}/scripts/preprocess.py",
         "console": "integratedTerminal"
     },
     {
