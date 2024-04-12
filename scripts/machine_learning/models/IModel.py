@@ -160,18 +160,14 @@ class IModel(ABC):
     :return: values, labels
     """
 
-    valueColumnNames = [col for col in df.columns if col.startswith('cc_')]
-    valueColumnNames.remove('cc_filename')
+    valueColumnNames = df.filter(regex='cc_\d+').columns
     if self.noise:
-      valueColumnNames += [col for col in df.columns if col.startswith('bb_')]
-      valueColumnNames.remove('bb_filename')
+      valueColumnNames = valueColumnNames.append(df.filter(regex='bb_\d+').columns)
 
     values = df[valueColumnNames].values
 
     if self.oneHotEncode:
-      labelColumnNames = [
-          col for col in df.columns if col.startswith(
-              self.labelName + '_')]
+      labelColumnNames = df.filter(regex=f'^{self.labelName}_').columns
       labels = df[labelColumnNames].values
     else:
       labels = df[self.labelName].values
@@ -198,9 +194,10 @@ class IModel(ABC):
     newWidth = originalWidth // downScaleFactor
     newHeight = originalHeight // downScaleFactor
 
-    outputImages = torch.zeros((len(df), 1, originalHeight, originalWidth))
+    outputImages = torch.zeros((len(df), 1, newHeight, newWidth))
 
-    for i, row in df.iterrows():
+    for i in range(len(df)):
+      row = df.iloc[i]
         # Get the filename
       imageFilename = row['cc_filename']
 

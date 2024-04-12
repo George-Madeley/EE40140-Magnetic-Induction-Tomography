@@ -6,4 +6,6 @@ from models.SupportVectorMachine import SupportVectorMachine
 from models.StochasticGradientDescent import StochasticGradientDescent
 from models.NeuralNetwork import NeuralNetwork
 
+from models.GenerativeAdversarialNetwork import GenerativeAdversarialNetwork as GAN
+
 from models.IModel import IModel

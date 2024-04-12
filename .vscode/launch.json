@@ -19,11 +19,18 @@
         "console": "integratedTerminal"
     },
     {
-      "name": "Test Models",
+      "name": "Classification",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/scripts/machine_learning/classification.py",
       "console": "integratedTerminal"
     },
+    {
+      "name": "Generation",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/machine_learning/generation.py",
+      "console": "integratedTerminal"
+    }
   ]
 }

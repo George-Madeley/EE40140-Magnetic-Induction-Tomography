@@ -133,6 +133,8 @@ def Preprocess(
   # remove background
   if sample == '0':
     image /= image
+    # downsample
+    image = colourFiltering.downSample(image, downsampleFactor)
     return image
 
   image = colourFiltering.toBinary(image, cutoff)

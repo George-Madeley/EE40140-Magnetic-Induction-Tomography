@@ -2,49 +2,52 @@ import torch
 from torch import nn
 from torch import Tensor
 
+
 class Generator(nn.Module):
+  """
+  Generator class for generating images using a neural network.
+
+  Args:
+      None
+
+  Attributes:
+      model (nn.Sequential): Sequential model consisting of linear layers and activation functions.
+
+  Methods:
+      forward(x: Tensor) -> Tensor: Forward pass of the generator network.
+
+  """
+
+  def __init__(self, inputSize: int, width: int, height: int):
+    super().__init__()
+    self.width = width
+    self.height = height
+    self.model = nn.Sequential(
+        nn.Linear(inputSize, 128),
+        nn.LeakyReLU(0.2, inplace=True),
+        nn.Linear(128, 256),
+        nn.BatchNorm1d(256),
+        nn.LeakyReLU(0.2, inplace=True),
+        nn.Linear(256, 512),
+        nn.BatchNorm1d(512),
+        nn.LeakyReLU(0.2, inplace=True),
+        nn.Linear(512, 1024),
+        nn.BatchNorm1d(1024),
+        nn.LeakyReLU(0.2, inplace=True),
+        nn.Linear(1024, width * height),
+        nn.Sigmoid()
+    )
+
+  def forward(self, x: Tensor) -> Tensor:
     """
-    Generator class for generating images using a neural network.
+    Forward pass of the Generator model.
 
     Args:
-        None
+        x (Tensor): Input tensor.
 
-    Attributes:
-        model (nn.Sequential): Sequential model consisting of linear layers and activation functions.
-
-    Methods:
-        forward(x: Tensor) -> Tensor: Forward pass of the generator network.
-
+    Returns:
+        Tensor: Output tensor after passing through the model.
     """
-
-    def __init__(self):
-        super().__init__()
-        self.model = nn.Sequential(
-            nn.Linear(240, 128),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(128, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(256, 512),
-            nn.BatchNorm1d(512),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 1024),
-            nn.BatchNorm1d(1024),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(1024, 4800),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-            """
-            Forward pass of the Generator model.
-
-            Args:
-                x (Tensor): Input tensor.
-
-            Returns:
-                Tensor: Output tensor after passing through the model.
-            """
-            output = self.model(x)
-            output = output.view(x.size(0), 1, 60, 80)
-            return output
+    output = self.model(x)
+    output = output.view(x.size(0), 1, self.height, self.width)
+    return output
