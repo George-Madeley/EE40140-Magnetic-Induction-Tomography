@@ -88,7 +88,7 @@ class GenerativeAdversarialNetwork(IModel):
     # Plot and save the generated images
     fig, axs = plt.subplots(2, 3, figsize=(8, 6))
     for i, ax in enumerate(axs.flatten()):
-        ax.imshow(fixedImageSamples[i][0], cmap='gray')
+        ax.imshow(fixedImageSamples[i][0], cmap='gray', vmin=0, vmax=1)
         ax.axis('off')
     plt.tight_layout()
     
@@ -172,7 +172,7 @@ class GenerativeAdversarialNetwork(IModel):
       # Plot and save the generated images
       fig, axs = plt.subplots(2, 3, figsize=(8, 6))
       for i, ax in enumerate(axs.flatten()):
-          ax.imshow(generatedImages[i][0], cmap='gray')
+          ax.imshow(generatedImages[i][0], cmap='gray', vmin=0, vmax=1)
           ax.axis('off')
       plt.tight_layout()
       

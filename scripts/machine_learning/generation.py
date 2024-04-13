@@ -25,7 +25,7 @@ def main():
 
   for modelClass in modelClasses:
     model = modelClass(
-      downScaleFactor=20,
+      downScaleFactor=8,
       batchSize=batchSize
     )
     model.train(df_train)

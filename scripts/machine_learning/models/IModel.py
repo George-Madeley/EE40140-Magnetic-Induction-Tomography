@@ -220,6 +220,9 @@ class IModel(ABC):
       one_values = image == 1
       image[one_values] = 0.99
 
+      if image.max() == image.min():
+        image = np.ones((newHeight, newWidth)) * 0.99
+
       # Convert the image to a PyTorch tensor
       image_tensor = torch.from_numpy(image).float()
 
