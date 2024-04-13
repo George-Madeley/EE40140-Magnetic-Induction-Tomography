@@ -3,7 +3,7 @@ from typing import List, Literal
 
 import pandas as pd
 
-from models import GAN
+from models import GAN, VAE
 
 def main():
   """
@@ -20,12 +20,12 @@ def main():
     )
 
   modelClasses = [
-    GAN
+    VAE
   ]
 
   for modelClass in modelClasses:
     model = modelClass(
-      downScaleFactor=8,
+      downScaleFactor=20,
       batchSize=batchSize
     )
     model.train(df_train)

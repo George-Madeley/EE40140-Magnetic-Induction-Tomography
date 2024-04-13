@@ -7,5 +7,6 @@ from models.StochasticGradientDescent import StochasticGradientDescent
 from models.NeuralNetwork import NeuralNetwork
 
 from models.GenerativeAdversarialNetwork import GenerativeAdversarialNetwork as GAN
+from models.VariationalAutoencoder import VariationalAutoencoder as VAE
 
 from models.IModel import IModel
