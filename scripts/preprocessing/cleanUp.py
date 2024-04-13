@@ -21,40 +21,34 @@ def cleanUp(removeImages: bool = False, checkMissingImages: bool = False) -> pd.
   return df
 
 
-def getDataframe(df_name: str = None) -> pd.DataFrame:
+def getDataframe() -> pd.DataFrame:
   """
   Get the dataset as a pandas dataframe.
 
-  :param df_name: The name of the dataset file. Default is None.
   :return: The dataset as a pandas dataframe.
   """
-  if df_name is not None and os.path.exists(df_name):
-    df = pd.read_csv(df_name, index_col=False)
-    df['sample'] = df['sample'].astype(str)
-    return df
 
-  if not os.path.exists('./data/data_samples.csv'):
+  dfFilepath = os.path.join('data','data_samples.csv')
+  if not os.path.exists(dfFilepath):
     samples = ['0', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
-    dataframePrefix = './data/data_sample-'
-    dataframeSuffix = '.csv'
     df = pd.DataFrame()
     for sample in samples:
-      print(f"Reading {dataframePrefix + sample + dataframeSuffix}")
-      df = pd.concat([df, pd.read_csv(dataframePrefix + sample + dataframeSuffix)])
+      print(f"Reading data_sample-{sample}.csv")
+      df = pd.concat([df, pd.read_csv(os.path.join('data', f'data_sample-{sample}.csv'))])
 
     print(f"Combined dataframe has {len(df)} rows")
     # Save the combined dataframe to a new csv file
-    df.to_csv('./data/data_samples.csv', index=False)
+    df.to_csv(dfFilepath, index=False)
 
   else:
     # Read the combined dataframe from the csv file. The
     # file does not have an index column therefore set
     # index_col=False
-    df = pd.read_csv('./data/data_samples.csv', index_col=False)
-
-    # All the values in the sample column are of type string.
-    # Convert them to type string.
-    df['sample'] = df['sample'].astype(str)
+    df = pd.read_csv(dfFilepath, index_col=False)
+    
+  df['sample'] = df['sample'].astype(str)
+  df['bb_filename'] = df['bb_filename'].astype(str)
+  df['cc_filename'] = df['cc_filename'].astype(str)
 
   return df
 

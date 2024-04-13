@@ -8,7 +8,7 @@ import numpy as np
 from preprocessing import cleanUp
 from preprocessing import formatting
 from preprocessing.filters import colourFiltering, morphologicalFiltering
-from preprocessing.utils import getCommonFactors, checkForProcessedFactors
+from preprocessing.utils import getCommonFactors, getImage
 
 
 def preprocessAllImages() -> None:
@@ -29,56 +29,20 @@ def preprocessAllImages() -> None:
 
   df = cleanUp.cleanUp()
 
-  imageWidth: int = 640
-  imageHeight: int = 480
-  commonFactors: List[int] = getCommonFactors(imageWidth, imageHeight)
+  print("Preprocessing Images...")
+  for i, row in df.iterrows():
+    # Get the filename
+    bb_filename: str = row['bb_filename']
+    cc_filename: str = row['cc_filename']
+    cutoff: float = row['cutoff']
+    sample: str = row['sample']
 
-  for idx in range(len(commonFactors)):
-    factor: int = commonFactors[idx]
-    nextFactor: int = commonFactors[idx +
-                                    1] if idx + 1 < len(commonFactors) else None
+    imageWidth: int = 640
+    imageHeight: int = 480
+    commonFactors: List[int] = getCommonFactors(imageWidth, imageHeight)
 
-    print(f'Processing images with factor {factor}')
-
-    if checkForProcessedFactors(nextFactor, imageWidth, imageHeight):
-      continue
-
-    newWidth: int = imageWidth // factor
-    newHeight: int = imageHeight // factor
-
-    directory: str = os.path.join(
-        os.getcwd(),
-        'images',
-        'processed',
-        f'{newHeight}x{newWidth}')
-    os.makedirs(directory, exist_ok=True)
-
-    for i, row in df.iterrows():
-      # Get the filename
-      bb_filename: str = row['bb_filename']
-      cc_filename: str = row['cc_filename']
-      cutoff: float = row['cutoff']
-      sample: str = row['sample']
-
-      savePath: str = os.path.join(directory, cc_filename)
-
-      if os.path.exists(savePath):
-        continue
-
-      print(
-        f'Processing image {cc_filename} to {newHeight}x{newWidth} sample: {sample}, i: {i}')
-
-      # Preprocess the image
-      image: np.ndarray = Preprocess(
-          bb_filename,
-          cc_filename,
-          sample,
-          downsampleFactor=factor,
-          cutoff=cutoff
-      )
-
-      # save image
-      plt.imsave(savePath, image, cmap='gray')
+    # Preprocess the image
+    Preprocess( bb_filename, cc_filename, sample, commonFactors, cutoff=cutoff)
 
   df = formatting.normalise(df)
 
@@ -100,10 +64,12 @@ def Preprocess(
   bb_filename: str,
   cc_filename: str,
   sample: str,
+  commonFactors: list[int],
   kernelSize: int = 5,
-  cutoff: float = 0.75,
-  downsampleFactor: int = 1
-) -> np.ndarray:
+  cutoff: float = 0.5,
+  imageWidth: int = 640,
+  imageHeight: int = 480
+) -> None:
   """
   Preprocesses an image by performing various operations such as greyscale conversion, binary conversion,
   background removal, morphological filtering, and downsampling.
@@ -116,45 +82,45 @@ def Preprocess(
       downsampleFactor (int, optional): The factor by which the image is downsampled. Defaults to 1.
 
   Returns:
-      numpy.ndarray: The preprocessed image.
+      None
   """
 
-  imageDirectory: str = './images/original'
+  image = getImage(cc_filename, commonFactors, imageWidth, imageHeight)
+  if image is None: return
 
-  # get the filename
-  imagePath: str = os.path.join(imageDirectory, cc_filename)
 
-  # get image from file
-  image: np.ndarray = np.array(plt.imread(imagePath))
-
-  # convert to greyscale
-  image = colourFiltering.toGreyscale(image)
-
-  # remove background
   if sample == '0':
-    image /= image
+    # Make all null images white.
+    image = np.ones((imageHeight, imageWidth, 3))
+  else:
+    image = colourFiltering.toGreyscale(image)
+    image = colourFiltering.toBinary(image, cutoff)
+    image = colourFiltering.removeBackground(
+        image, os.path.join('images', 'original', bb_filename))
+    image = colourFiltering.toBinary(image, cutoff)
+    image = morphologicalFiltering.opening(image, kernelSize)
+    image = morphologicalFiltering.closing(image, kernelSize)
+  
+  
+  for factor in commonFactors:
+    newWidth: int = imageWidth // factor
+    newHeight: int = imageHeight // factor
+    directory: str = os.path.join(
+        'images',
+        'processed',
+        f'{newHeight}x{newWidth}')
+    os.makedirs(directory, exist_ok=True)
+    savePath: str = os.path.join(directory, cc_filename)
+
     # downsample
-    image = colourFiltering.downSample(image, downsampleFactor)
-    return image
+    downSampledImage = colourFiltering.downSample(image, factor)
 
-  image = colourFiltering.toBinary(image, cutoff)
+    # save image
+    plt.imsave(savePath, downSampledImage, cmap='gray')
 
-  image = colourFiltering.removeBackground(
-      image, f'{imageDirectory}/{bb_filename}')
 
-  # convert to binary
-  image = colourFiltering.toBinary(image, cutoff)
-
-  # apply opening
-  image = morphologicalFiltering.opening(image, kernelSize)
-
-  # apply closing
-  image = morphologicalFiltering.closing(image, kernelSize)
-
-  # downsample
-  image = colourFiltering.downSample(image, downsampleFactor)
-
-  return image
+  print(f"Processed image {cc_filename}\tSample: {sample}\tcutoff:{cutoff}")
+  return True
 
 
 if __name__ == '__main__':

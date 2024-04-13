@@ -1,6 +1,9 @@
 import os
 from typing import List
 
+from matplotlib import pyplot as plt
+import numpy as np
+
 
 def getCommonFactors(a: int, b: int, maxFactor: int = 32) -> List[int]:
   """
@@ -55,3 +58,27 @@ def checkForProcessedFactors(
     if os.path.exists(directory):
       return True
   return False
+
+def getImage(filename: str, factors: list[int], imageWidth: int, imageHeight: int):
+  # Create save path and check if image exists
+  allFactorsProcessed = True
+  for factor in factors:
+    newWidth: int = imageWidth // factor
+    newHeight: int = imageHeight // factor
+    directory: str = os.path.join(
+        'images',
+        'processed',
+        f'{newHeight}x{newWidth}')
+    os.makedirs(directory, exist_ok=True)
+    savePath: str = os.path.join(directory, filename)
+    if not os.path.exists(savePath):
+      allFactorsProcessed = False
+      break
+
+  if allFactorsProcessed: return None
+
+  imageDirectory: str = os.path.join('images', 'original')
+  imagePath: str = os.path.join(imageDirectory, filename)
+  image: np.ndarray = np.array(plt.imread(imagePath))
+
+  return image
