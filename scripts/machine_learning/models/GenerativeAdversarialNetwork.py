@@ -1,3 +1,4 @@
+import csv
 import os
 from typing import Literal
 from matplotlib import pyplot as plt
@@ -32,11 +33,18 @@ class GenerativeAdversarialNetwork(IModel):
     originalWidth = 640
     originalHeight = 480
 
-    self.learningRate = kwargs.get("learningRate", 0.0002)
-    self.numEpochs = kwargs.get("numEpochs", 1000)
-    self.batchSize = kwargs.get("batchSize", 64)
-    self.lossFunctionDiscriminator = kwargs.get("lossFunctionDiscriminator", nn.BCELoss())
-    self.lossFunctionGenerator = kwargs.get("lossFunctionGenerator", nn.MSELoss())
+    defaultParams = GenerativeAdversarialNetwork.getDefaultParams()
+
+    self.learningRate = kwargs.get(
+        "learningRate", defaultParams["learningRate"])
+    self.numEpochs = kwargs.get("numEpochs", defaultParams["numEpochs"])
+    self.batchSize = kwargs.get("batchSize", defaultParams["batchSize"])
+    self.lossFunctionDiscriminator = kwargs.get(
+        "lossFunctionDiscriminator",
+        defaultParams["lossFunctionDiscriminator"])
+    self.lossFunctionGenerator = kwargs.get(
+        "lossFunctionGenerator",
+        defaultParams["lossFunctionGenerator"])
 
     self.labelName = labelName
     self.noise = noise
@@ -59,7 +67,7 @@ class GenerativeAdversarialNetwork(IModel):
       originalHeight // downScaleFactor
     ).to(self.device)
 
-  def train(self, df: DataFrame) -> None:
+  def train(self, df: DataFrame, imgDir: str, dfPath: str) -> None:
     """
     Train the generative adversarial network model using the provided DataFrame.
 
@@ -69,6 +77,9 @@ class GenerativeAdversarialNetwork(IModel):
     Returns:
         None
     """
+    print(
+      f"Training the generative adversarial network model on {self.device}...")
+
     values, _ = self.getValuesAndLabels(df)
     images = self.getImages(df, self.downScaleFactor)
 
@@ -88,14 +99,14 @@ class GenerativeAdversarialNetwork(IModel):
     # Plot and save the generated images
     fig, axs = plt.subplots(2, 3, figsize=(8, 6))
     for i, ax in enumerate(axs.flatten()):
-        ax.imshow(fixedImageSamples[i][0], cmap='gray', vmin=0, vmax=1)
-        ax.axis('off')
+      ax.imshow(fixedImageSamples[i][0], cmap='gray', vmin=0, vmax=1)
+      ax.axis('off')
     plt.tight_layout()
-    
+
     # title the plot
     plt.suptitle(f"Orignal Images")
     # save the plot
-    savePath = os.path.join('images', 'epochs', f'original.png')
+    savePath = os.path.join(imgDir, f'original.png')
     plt.savefig(savePath)
 
     # define the discriminator and generator optimizers
@@ -108,6 +119,7 @@ class GenerativeAdversarialNetwork(IModel):
       lr=self.learningRate
     )
 
+    print("Training the generative adversarial network model...")
     for epoch in range(self.numEpochs):
       for n, (realSamples, latentSpaceSamples) in enumerate(trainLoader):
         # Get the real samples and send to device
@@ -158,29 +170,46 @@ class GenerativeAdversarialNetwork(IModel):
         lossGenerator.backward()
         optimizerGenerator.step()
 
-      
       print(f"Epoch: {epoch} Loss D.: {lossDiscriminator}")
       print(f"Epoch: {epoch} Loss G.: {lossGenerator}")
       print("--------------------------------------------------")
 
       # Generate images using random latent samples
       if epoch == 0:
-        fixedLatentSamples = trainLoader.dataset.tensors[1][randomSampleIndeces].to(self.device)
+        fixedLatentSamples = trainLoader.dataset.tensors[1][randomSampleIndeces].to(
+          self.device)
       generatedImages = self.generator(fixedLatentSamples)
       generatedImages = generatedImages.detach().cpu()
 
       # Plot and save the generated images
       fig, axs = plt.subplots(2, 3, figsize=(8, 6))
       for i, ax in enumerate(axs.flatten()):
-          ax.imshow(generatedImages[i][0], cmap='gray', vmin=0, vmax=1)
-          ax.axis('off')
+        ax.imshow(generatedImages[i][0], cmap='gray', vmin=0, vmax=1)
+        ax.axis('off')
       plt.tight_layout()
-      
+
       # title the plot
       plt.suptitle(f"Epoch {epoch}")
       # save the plot
-      savePath = os.path.join('images', 'epochs', f'epoch_{str(epoch).zfill(3)}.png')
+      savePath = os.path.join(imgDir, f'epoch_{str(epoch).zfill(3)}.png')
       plt.savefig(savePath)
+      plt.close()
+
+      uniqueID = imgDir.split('/')[-1]
+
+      with open(dfPath, 'a', newline='') as f:
+        csvWriter = csv.writer(f)
+        csvWriter.writerow([
+          self.__class__.__name__,
+          self.learningRate,
+          self.downScaleFactor,
+          self.numEpochs,
+          self.batchSize,
+          epoch,
+          lossDiscriminator.item(),
+          lossGenerator.item(),
+          uniqueID
+        ])
 
   def test(self, df: DataFrame) -> float:
     """
@@ -233,11 +262,20 @@ class GenerativeAdversarialNetwork(IModel):
     raise NotImplementedError
     pass
 
-  def getDefaultParams(self):
+  @staticmethod
+  def getDefaultParams():
     """
     Get the default parameters
 
     :return: default parameters
     """
-    raise NotImplementedError
-    pass
+    defaultParams = {
+      "learningRate": 0.0001,
+      "numEpochs": 100,
+      "batchSize": 45,
+      "lossFunctionDiscriminator": nn.BCELoss(),
+      "lossFunctionGenerator": nn.MSELoss(),
+      "downScaleFactor": 10,
+      "noise": False,
+    }
+    return defaultParams

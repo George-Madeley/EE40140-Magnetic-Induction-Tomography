@@ -1,9 +1,12 @@
+import csv
 import os
+from random import choice
+from string import ascii_letters
 from typing import List, Literal
 
-import pandas as pd
 
 from models import GAN, VAE
+import pandas as pd
 
 def main():
   """
@@ -20,17 +23,61 @@ def main():
     )
 
   modelClasses = [
-    VAE
+    GAN
   ]
 
+  params = {
+    'downScaleFactor': [16, 10, 8, 5, 4, 2, 1],
+    'learningRate': [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001],
+  }
+
   for modelClass in modelClasses:
-    model = modelClass(
-      downScaleFactor=20,
-      batchSize=batchSize
-    )
-    model.train(df_train)
+    varyParams(modelClass, df_train, params)
 
   pass
+
+def varyParams(modelClass, df_train, params):
+  """
+  Vary the parameters of the models
+  """
+
+  dfpath = os.path.join(
+    'results',
+    f'{modelClass.__name__}.csv'
+  )
+
+  if not os.path.exists(dfpath):
+    with open(dfpath, 'w', newline='') as f:
+      headers = ['Model Name'] + list(params.keys()) + [
+        'Epoch',
+        'D Loss',
+        'G Loss',
+        'Img ID',
+      ]
+
+      writer = csv.DictWriter(f, fieldnames=headers)
+      writer.writeheader()
+
+
+  defaultParams = modelClass.getDefaultParams()
+    
+  for param in params.keys():
+    for paramValue in params.get(param, []):
+      uniqueId = ''.join([choice(ascii_letters) for i in range(10)])
+      imageDir = os.path.join('images', 'epochs', f'{modelClass.__name__}', f'{uniqueId}')
+      os.makedirs(imageDir, exist_ok=True)
+
+      defaultParams[param] = paramValue
+
+      model = modelClass(
+        **defaultParams
+      )
+      model.train(
+        df_train,
+        imageDir,
+        dfpath
+      )
+  
 
 def getData(material: Literal['iron', 'copper'] = 'iron'):
   """
