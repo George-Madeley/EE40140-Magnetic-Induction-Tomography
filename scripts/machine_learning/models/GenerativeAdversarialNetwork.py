@@ -1,15 +1,15 @@
-import csv
 import os
+from random import choice
+from string import ascii_letters
 from typing import Literal
-from matplotlib import pyplot as plt
+
 import torch
 from torch import nn
 from torch.optim import Adam
+from pandas import DataFrame, concat, read_csv
 
-from pandas import DataFrame
 from .Discriminator import Discriminator
 from .Generator import Generator
-
 from .IModel import IModel
 
 
@@ -19,7 +19,7 @@ class GenerativeAdversarialNetwork(IModel):
       labelName: Literal['shape', 'sample'] = 'shape',
       noise: bool = False,
       oneHotEncode: bool = False,
-      downScaleFactor: int = 1,
+      downScaleFactor: int = 32,
       **kwargs
   ):
     """
@@ -30,26 +30,24 @@ class GenerativeAdversarialNetwork(IModel):
         noise (bool, optional): Whether to add noise to the data. Defaults to False.
     """
 
-    originalWidth = 640
-    originalHeight = 480
-
-    defaultParams = GenerativeAdversarialNetwork.getDefaultParams()
-
-    self.learningRate = kwargs.get(
-        "learningRate", defaultParams["learningRate"])
-    self.numEpochs = kwargs.get("numEpochs", defaultParams["numEpochs"])
-    self.batchSize = kwargs.get("batchSize", defaultParams["batchSize"])
-    self.lossFunctionDiscriminator = kwargs.get(
-        "lossFunctionDiscriminator",
-        defaultParams["lossFunctionDiscriminator"])
-    self.lossFunctionGenerator = kwargs.get(
-        "lossFunctionGenerator",
-        defaultParams["lossFunctionGenerator"])
-
+    self.validParams = {
+      'learningRate': [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001],
+      'maxEpoch': list(range(1, 1001)),
+      'dLossFunc': [nn.BCELoss(), nn.BCEWithLogitsLoss(), nn.CrossEntropyLoss(), nn.MSELoss(), nn.L1Loss()],
+      'gLossFunc': [nn.BCELoss(), nn.BCEWithLogitsLoss(), nn.CrossEntropyLoss(), nn.MSELoss(), nn.L1Loss()],
+    }
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
     self.downScaleFactor = downScaleFactor
+
+    defaultParams = GenerativeAdversarialNetwork.getDefaultParams()
+
+    self.batchSize = kwargs.get("batchSize", defaultParams["batchSize"])
+    self.learningRate = kwargs.get("learningRate", defaultParams["learningRate"])
+    self.maxEpoch = kwargs.get("numEpochs", defaultParams["numEpochs"])
+    self.DLossFunc = kwargs.get("dLossFunc",defaultParams["dLossFunc"])
+    self.GLossFunc = kwargs.get("gLossFunc",defaultParams["gLossFunc"])
 
     self.device = ""
     if torch.cuda.is_available():
@@ -58,16 +56,28 @@ class GenerativeAdversarialNetwork(IModel):
       self.device = torch.device("cpu")
 
     self.discriminator = Discriminator(
-      originalWidth // downScaleFactor,
-      originalHeight // downScaleFactor
+      640 // downScaleFactor,
+      480 // downScaleFactor
     ).to(self.device)
     self.generator = Generator(
       240 if noise else 120,
-      originalWidth // downScaleFactor,
-      originalHeight // downScaleFactor
+      640 // downScaleFactor,
+      480 // downScaleFactor
     ).to(self.device)
 
-  def train(self, df: DataFrame, imgDir: str, dfPath: str) -> None:
+    self.optimizerDiscriminator = Adam(
+      self.discriminator.parameters(),
+      lr=self.learningRate
+    )
+    self.optimizerGenerator = Adam(
+      self.generator.parameters(),
+      lr=self.learningRate
+    )
+
+  def train(
+    self,
+    trainLoader,
+  ) -> None:
     """
     Train the generative adversarial network model using the provided DataFrame.
 
@@ -77,142 +87,44 @@ class GenerativeAdversarialNetwork(IModel):
     Returns:
         None
     """
-    print(
-      f"Training the generative adversarial network model on {self.device}...")
+    
+    for realSamples, latentSpaceSamples in trainLoader:
+      # Create and label the real samples, the generated samples, and the
+      # latent space samples. Send them to the chosen device i.e., CPU or GPU.
+      realSamples = realSamples.to(device=self.device)
+      realSampleLabels = torch.ones((self.batchSize, 1)).to(device=self.device)
+      latentSpaceSamples = latentSpaceSamples.to(device=self.device)
+      generatedSamples = self.generator(latentSpaceSamples)
+      generatedSampleLabels = torch.zeros((self.batchSize, 1)).to(device=self.device)
+      allSamples = torch.cat((realSamples, generatedSamples))
+      allSampleLabels = torch.cat((realSampleLabels, generatedSampleLabels))
 
-    values, _ = self.getValuesAndLabels(df)
-    images = self.getImages(df, self.downScaleFactor)
+      # Training the discriminator
+      self.discriminator.zero_grad()
+      outputDiscriminator = self.discriminator(allSamples)
+      lossDiscriminator = self.DLossFunc(
+          outputDiscriminator, allSampleLabels
+      )
+      lossDiscriminator.backward()
+      self.optimizerDiscriminator.step()
 
-    values = torch.from_numpy(values).float()
+      # Training the generator
+      self.generator.zero_grad()
+      generatedSamples = self.generator(latentSpaceSamples)
+      lossGenerator = self.GLossFunc(
+          generatedSamples, realSamples
+      )
+      lossGenerator.backward()
+      self.optimizerGenerator.step()
 
-    trainSet = torch.utils.data.TensorDataset(images, values)
+    return lossDiscriminator, lossGenerator
 
-    trainLoader = torch.utils.data.DataLoader(
-        trainSet, batch_size=self.batchSize, shuffle=True
-    )
-
-    numSamples = len(df)
-    numBatches = numSamples // self.batchSize
-    randomSampleIndeces = [1342, 941, 119, 823, 607, 414]
-
-    fixedImageSamples = trainLoader.dataset.tensors[0][randomSampleIndeces]
-    # Plot and save the generated images
-    fig, axs = plt.subplots(2, 3, figsize=(8, 6))
-    for i, ax in enumerate(axs.flatten()):
-      ax.imshow(fixedImageSamples[i][0], cmap='gray', vmin=0, vmax=1)
-      ax.axis('off')
-    plt.tight_layout()
-
-    # title the plot
-    plt.suptitle(f"Orignal Images")
-    # save the plot
-    savePath = os.path.join(imgDir, f'original.png')
-    plt.savefig(savePath)
-
-    # define the discriminator and generator optimizers
-    optimizerDiscriminator = Adam(
-      self.discriminator.parameters(),
-      lr=self.learningRate
-    )
-    optimizerGenerator = Adam(
-      self.generator.parameters(),
-      lr=self.learningRate
-    )
-
-    print("Training the generative adversarial network model...")
-    for epoch in range(self.numEpochs):
-      for n, (realSamples, latentSpaceSamples) in enumerate(trainLoader):
-        # Get the real samples and send to device
-        realSamples = realSamples.to(
-            device=self.device
-        )
-
-        # Create the labels which are later used as input for the BCE loss
-        # function for the discriminator and send to device
-        realSampleLabels = torch.ones((self.batchSize, 1)).to(
-            device=self.device
-        )
-
-        # Send the latent samples to the device
-        latentSpaceSamples = latentSpaceSamples.to(
-            device=self.device
-        )
-
-        # Generate the fake samples from the latent samples
-        generatedSamples = self.generator(latentSpaceSamples)
-
-        # Create the labels for the fake samples
-        generatedSampleLabels = torch.zeros((self.batchSize, 1)).to(
-            device=self.device
-        )
-
-        # Combine the real and fake samples
-        allSamples = torch.cat((realSamples, generatedSamples))
-        allSampleLabels = torch.cat(
-            (realSampleLabels, generatedSampleLabels)
-        )
-
-        # Training the discriminator
-        self.discriminator.zero_grad()
-        outputDiscriminator = self.discriminator(allSamples)
-        lossDiscriminator = self.lossFunctionDiscriminator(
-            outputDiscriminator, allSampleLabels
-        )
-        lossDiscriminator.backward()
-        optimizerDiscriminator.step()
-
-        # Training the generator
-        self.generator.zero_grad()
-        generatedSamples = self.generator(latentSpaceSamples)
-        lossGenerator = self.lossFunctionGenerator(
-            generatedSamples, realSamples
-        )
-        lossGenerator.backward()
-        optimizerGenerator.step()
-
-      print(f"Epoch: {epoch} Loss D.: {lossDiscriminator}")
-      print(f"Epoch: {epoch} Loss G.: {lossGenerator}")
-      print("--------------------------------------------------")
-
-      # Generate images using random latent samples
-      if epoch == 0:
-        fixedLatentSamples = trainLoader.dataset.tensors[1][randomSampleIndeces].to(
-          self.device)
-      generatedImages = self.generator(fixedLatentSamples)
-      generatedImages = generatedImages.detach().cpu()
-
-      # Plot and save the generated images
-      fig, axs = plt.subplots(2, 3, figsize=(8, 6))
-      for i, ax in enumerate(axs.flatten()):
-        ax.imshow(generatedImages[i][0], cmap='gray', vmin=0, vmax=1)
-        ax.axis('off')
-      plt.tight_layout()
-
-      # title the plot
-      plt.suptitle(f"Epoch {epoch}")
-      # save the plot
-      savePath = os.path.join(imgDir, f'epoch_{str(epoch).zfill(3)}.png')
-      plt.savefig(savePath)
-      plt.close()
-
-      uniqueID = imgDir.split('/')[-1]
-
-      with open(dfPath, 'a', newline='') as f:
-        csvWriter = csv.writer(f)
-        csvWriter.writerow([
-          self.__class__.__name__,
-          self.learningRate,
-          self.downScaleFactor,
-          self.numEpochs,
-          self.batchSize,
-          epoch,
-          lossDiscriminator.item(),
-          lossGenerator.item(),
-          uniqueID,
-          self.noise
-        ])
-
-  def test(self, df: DataFrame) -> float:
+  def test(
+      self,
+      testLoader,
+      discriminatorLosses: dict,
+      generatorLosses: dict,
+    ) -> float:
     """
     Test the generative adversarial network model on the given DataFrame and return the accuracy score.
 
@@ -222,35 +134,33 @@ class GenerativeAdversarialNetwork(IModel):
     Returns:
     - float: The accuracy score of the generative adversarial network model on the test data.
     """
-    values, _ = self.getValuesAndLabels(df)
-    images = self.getImages(df, self.downScaleFactor)
+    testLoaderLen = len(testLoader)
 
-    testSet = torch.utils.data.TensorDataset(images, values)
-
-    testLoader = torch.utils.data.DataLoader(
-        testSet, batch_size=self.batchSize, shuffle=True
-    )
-    totalLossGenerator = 0
     for realSamples, latentSpaceSamples in testLoader:
-      # Get the real samples and send to device
-      realSamples = realSamples.to(
-          device=self.device
-      )
+      # Create and label the real samples, the generated samples, and the
+      # latent space samples. Send them to the chosen device i.e., CPU or GPU.
+      realSamples = realSamples.to(device=self.device)
+      realSampleLabels = torch.ones((self.batchSize, 1)).to(device=self.device)
+      latentSpaceSamples = latentSpaceSamples.to(device=self.device)
+      generatedSamples = self.generator(latentSpaceSamples)
+      generatedSampleLabels = torch.zeros((self.batchSize, 1)).to(device=self.device)
+      allSamples = torch.cat((realSamples, generatedSamples))
+      allSampleLabels = torch.cat((realSampleLabels, generatedSampleLabels))
 
-      # Send the latent samples to the device
-      latentSpaceSamples = latentSpaceSamples.to(
-          device=self.device
-      )
+      # Test the discriminator
+      self.discriminator.zero_grad()
+      outputDiscriminator = self.discriminator(allSamples)
+      discriminatorLosses = super().score(discriminatorLosses, allSampleLabels, outputDiscriminator)
 
       # Test the generator
       self.generator.zero_grad()
       generatedSamples = self.generator(latentSpaceSamples)
-      lossGenerator = self.lossFunctionGenerator(
-          generatedSamples, realSamples
-      )
-      totalLossGenerator += lossGenerator.item()
+      generatorLosses = super().score(generatorLosses, realSamples, generatedSamples)
 
-    return totalLossGenerator / len(testLoader)
+    discriminatorLosses = {k: v / testLoaderLen for k, v in discriminatorLosses.items()}
+    generatorLosses = {k: v / testLoaderLen for k, v in generatorLosses.items()}
+
+    return discriminatorLosses, generatorLosses
 
   def predict(self, df: DataFrame) -> None:
     """
@@ -263,6 +173,114 @@ class GenerativeAdversarialNetwork(IModel):
     raise NotImplementedError
     pass
 
+  def varyParams(
+      self,
+      df_train: DataFrame,
+      df_test: DataFrame,
+      params: dict,
+    ) -> None:
+    """
+    Vary the parameters of the model
+
+    :param params: parameters
+    """
+    validParams = {}
+    for param in params.keys():
+      if super().isParamValid(param):
+        validParams[param] = params[param]
+
+    if validParams == {}:
+      print(
+        f'No valid parameters to vary for for {self.__class__.__name__} model.')
+      
+    discriminatorLosses = {
+      "BCE": 0,
+      "BCELogits": 0,
+      "CE": 0,
+      "MSE": 0,
+      "L1": 0,
+    }
+
+    generatorLosses = {
+      "BCE": 0,
+      "BCELogits": 0,
+      "CE": 0,
+      "MSE": 0,
+      "L1": 0,
+    }
+
+    if os.path.exists(os.path.join('results', f'{self.__class__.__name__}.csv')):
+      df_results = read_csv(
+        os.path.join('results', f'{self.__class__.__name__}.csv')
+      )
+    else:
+      df_results = DataFrame({
+        'Model Name': [],
+        'Learning Rate': [],
+        'Down Scale Factor': [],
+        'Max Epoch': [],
+        'Batch Size': [],
+        'Noise': [],
+        'Epoch': [],
+        **{f'D {k} Loss': [] for k in discriminatorLosses.keys()},
+        **{f'G {k} Loss': [] for k in generatorLosses.keys()},
+        'Img ID': [],
+      })
+
+
+    for paramName in validParams.keys():
+      for param in validParams[paramName]:
+        # Get the values and labels
+        trainLoader = super().getLoader(df_train)
+        testLoader = super().getLoader(df_test)
+
+        fixedIndeces = [1342, 941, 119, 823, 607, 414]
+        fixedRealImages = testLoader.dataset.tensors[0][fixedIndeces]
+
+        uniqueID = ''.join([choice(ascii_letters) for i in range(10)])
+        imgDir = os.path.join('images', 'epochs', f'{self.__class__.__name__}', uniqueID)
+        os.makedirs(imgDir, exist_ok=True)
+        super().plotImages(imgDir, fixedRealImages, 'original.png', subtitle='Original Images')
+        resultsPath = os.path.join('results', f'{self.__class__.__name__}.csv')
+
+        defaultParams = self.getDefaultParams()
+        self.__init__(**defaultParams)
+        setattr(self, paramName, param)
+
+        for epoch in range(self.maxEpoch):
+
+          discriminatorLosses = {k: 0 for k in discriminatorLosses.keys()}
+          generatorLosses = {k: 0 for k in generatorLosses.keys()}
+
+          discriminatorLoss, generatorLoss = self.train(trainLoader)
+          discriminatorLosses, generatorLosses = self.test(
+            testLoader,
+            discriminatorLosses,
+            generatorLosses,
+          )
+
+          print(f'Epoch: {epoch}\tLoss D.: {discriminatorLoss}\tLoss G.: {generatorLoss}')
+          if epoch == 0:
+            fixedLatentSamples = testLoader.dataset.tensors[1][fixedIndeces].to(self.device)
+          fixedGeneratedImages = self.generator(fixedLatentSamples)
+          fixedGeneratedImages = fixedGeneratedImages.detach().cpu()
+          self.plotImages(imgDir, fixedGeneratedImages, f'epoch_{str(epoch).zfill(3)}.png', subtitle=f'Epoch {epoch}')
+
+          df_newRow = DataFrame({
+            'Model Name': self.__class__.__name__,
+            'Learning Rate': self.learningRate,
+            'Down Scale Factor': self.downScaleFactor,
+            'Max Epoch': self.maxEpoch,
+            'Batch Size': self.batchSize,
+            'Noise': self.noise,
+            'Epoch': epoch,
+            **{f'D {k} Loss': v for k, v in discriminatorLosses.items()},
+            **{f'G {k} Loss': v for k, v in generatorLosses.items()},
+            'Img ID': uniqueID,
+          }, index=[0])
+          df_results = concat([df_results, df_newRow], axis=0)
+          df_results.to_csv(resultsPath, index=False)
+
   @staticmethod
   def getDefaultParams():
     """
@@ -274,9 +292,9 @@ class GenerativeAdversarialNetwork(IModel):
       "learningRate": 0.0001,
       "numEpochs": 100,
       "batchSize": 45,
-      "lossFunctionDiscriminator": nn.BCELoss(),
-      "lossFunctionGenerator": nn.MSELoss(),
-      "downScaleFactor": 10,
+      "dLossFunc": nn.BCELoss(),
+      "gLossFunc": nn.MSELoss(),
+      "downScaleFactor": 32,
       "noise": False,
     }
     return defaultParams

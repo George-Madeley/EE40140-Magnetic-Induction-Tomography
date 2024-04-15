@@ -1,13 +1,12 @@
-from abc import ABC, abstractmethod
 import os
+from abc import ABC, abstractmethod
 from random import choice
 from string import ascii_letters
-from sys import _getframe
-from typing import Literal, get_args, get_origin
 
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from matplotlib import pyplot as plt
 from pandas import DataFrame, concat
+from torch import nn
 import numpy as np
 import torch
 
@@ -52,16 +51,6 @@ class IModel(ABC):
     :return: default parameters
     """
     pass
-
-  @staticmethod
-  def enforceLiterals(function):
-    kwargs = _getframe(1).f_locals
-    for name, type_ in function.__annotations__.items():
-      value = kwargs.get(name)
-      options = get_args(type_)
-      if get_origin(
-        type_) is Literal and name in kwargs and value not in options:
-        raise AssertionError(f"'{value}' is not in {options} for '{name}'")
 
   def varyParams(
       self,
@@ -147,6 +136,63 @@ class IModel(ABC):
     if name in self.validParams.keys():
       return True
     return False
+  
+  def score(self, scoring: dict, actual, predicted):
+    """
+    Calculate the scores for different loss functions and update the scoring dictionary.
+
+    Args:
+      scoring (dict): A dictionary containing the scores for different loss functions.
+      actual: The actual values.
+      predicted: The predicted values.
+
+    Returns:
+      dict: The updated scoring dictionary.
+    """
+  
+    BCE = nn.functional.binary_cross_entropy(predicted, actual).item()
+    if 'BCE' in scoring.keys(): scoring['BCE'] += BCE
+    BCELogits = nn.functional.binary_cross_entropy_with_logits(predicted, actual).item()
+    if 'BCELogits' in scoring.keys(): scoring['BCELogits'] += BCELogits
+    CE = nn.functional.cross_entropy(predicted, actual).item()
+    if 'CE' in scoring.keys(): scoring['CE'] += CE
+    MSELoss = nn.functional.mse_loss(predicted, actual).item()
+    if 'MSE' in scoring.keys(): scoring['MSE'] += MSELoss
+    L1Loss = nn.functional.l1_loss(predicted, actual).item()
+    if 'L1' in scoring.keys(): scoring['L1'] += L1Loss
+
+    return scoring
+  
+  def plotImages(
+    self,
+    imgDir: str,
+    fixedImageSamples,
+    fileName: str,
+    subtitle: str
+  ):
+    """
+    Plot and save a grid of images.
+
+    Args:
+      imgDir (str): The directory where the image will be saved.
+      fixedImageSamples: The fixed image samples to be plotted.
+      fileName (str): The name of the file to be saved.
+      subtitle (str): The title of the plot.
+
+    Returns:
+      None
+    """
+    fig, axs = plt.subplots(2, 3, figsize=(8, 6))
+    for i, ax in enumerate(axs.flatten()):
+      ax.imshow(fixedImageSamples[i][0], cmap='gray', vmin=0, vmax=1)
+      ax.axis('off')
+    plt.tight_layout()
+
+    # title the plot
+    plt.suptitle(subtitle)
+    # save the plot
+    savePath = os.path.join(imgDir, fileName)
+    plt.savefig(savePath)
 
   def getValuesAndLabels(
     self,
@@ -233,3 +279,20 @@ class IModel(ABC):
       outputImages[i] = image_tensor
 
     return outputImages
+
+  def getLoader(self, df: DataFrame):
+    """
+    Get the data loader
+    """
+    values, _ = self.getValuesAndLabels(df)
+    images = self.getImages(df, self.downScaleFactor)
+
+    values = torch.from_numpy(values).float()
+
+    dataSet = torch.utils.data.TensorDataset(images, values)
+
+    dataLoader = torch.utils.data.DataLoader(
+        dataSet, batch_size=self.batchSize, shuffle=True
+    )
+
+    return dataLoader
