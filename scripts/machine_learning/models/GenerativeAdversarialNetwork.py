@@ -208,7 +208,8 @@ class GenerativeAdversarialNetwork(IModel):
           epoch,
           lossDiscriminator.item(),
           lossGenerator.item(),
-          uniqueID
+          uniqueID,
+          self.noise
         ])
 
   def test(self, df: DataFrame) -> float:

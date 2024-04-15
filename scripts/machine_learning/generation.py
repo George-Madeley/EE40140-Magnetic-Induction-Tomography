@@ -27,7 +27,7 @@ def main():
   ]
 
   params = {
-    'downScaleFactor': [16, 10, 8, 5, 4, 2, 1],
+    'downScaleFactor': [32, 20, 16, 10, 8, 5, 4, 2, 1],
     'learningRate': [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001],
   }
 
@@ -53,6 +53,7 @@ def varyParams(modelClass, df_train, params):
         'D Loss',
         'G Loss',
         'Img ID',
+        'Noise',
       ]
 
       writer = csv.DictWriter(f, fieldnames=headers)
@@ -68,6 +69,7 @@ def varyParams(modelClass, df_train, params):
       os.makedirs(imageDir, exist_ok=True)
 
       defaultParams[param] = paramValue
+      defaultParams['noise'] = True
 
       model = modelClass(
         **defaultParams
