@@ -1,15 +1,13 @@
 import os
+from random import choice
+from string import ascii_letters
 from typing import Literal
 
-from matplotlib import pyplot as plt
-from pandas import DataFrame
-
-from .IModel import IModel
-from .VAE import VAE
-
+from pandas import DataFrame, concat, read_csv
 import torch
-from torch.optim import Adam
-from torch import nn
+from .IModel import IModel
+from .Encoder import Encoder
+from .Decoder import Decoder
 
 class VariationalAutoencoder(IModel):
   def __init__(
@@ -17,168 +15,193 @@ class VariationalAutoencoder(IModel):
     labelName: Literal['shape', 'sample'] = 'shape',
     noise: bool = False,
     oneHotEncode: bool = False,
-    downScaleFactor: int = 1,
+    downScaleFactor: int = 32,
     **kwargs
-  ) -> None:
-    
-    self.originalWidth = 640
-    self.originalHeight = 480
-    
-    self.learningRate = kwargs.get("learningRate", 0.0002)
-    self.numEpochs = kwargs.get("numEpochs", 1000)
-    self.batchSize = kwargs.get("batchSize", 64)
-
+  ):
+    self.validParams = {
+      'downScaleFactor': [32, 20, 16, 10, 8, 5, 4, 2, 1],
+      'learningRate': [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001],
+      'maxEpoch': list(range(1, 1001)),
+    }
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
     self.downScaleFactor = downScaleFactor
 
-    
+    defaultParams = VariationalAutoencoder.getDefaultParams()
+
+    self.batchSize = kwargs.get('batchSize', defaultParams['batchSize'])
+    self.learningRate = kwargs.get('learningRate', defaultParams['learningRate'])
+    self.maxEpoch = kwargs.get('maxEpoch', defaultParams['maxEpoch'])
+
     self.device = ""
     if torch.cuda.is_available():
       self.device = torch.device("cuda")
     else:
       self.device = torch.device("cpu")
 
-
-    inputDim = 240 if self.noise else 120
-    hiddenDim = kwargs.get("hiddenDim", 400)
-    latentDim = kwargs.get("latentDim", 200)
-
-    self.model = VAE(
-      device=self.device,
-      input_dim=inputDim,
-      hidden_dim=hiddenDim,
-      latent_dim=latentDim,
-      height=self.originalHeight // downScaleFactor,
-      width=self.originalWidth // downScaleFactor
+    latent_dim = 256
+    self.encoder = Encoder(
+      240 if noise else 120,
+      latent_dim
     ).to(self.device)
-
-  def lossFunction(self, x, x_hat, mean, log_var):
-    reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
-    KLD = -0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
-
-    return reproduction_loss + KLD
-  
-  def train(self, df:DataFrame) -> None:
-    values, _ = self.getValuesAndLabels(df)
-    realImages = self.getImages(df, self.downScaleFactor)
-
-    values = torch.from_numpy(values).float()
-
-    trainSet = torch.utils.data.TensorDataset(realImages, values)
-
-    trainLoader = torch.utils.data.DataLoader(
-        trainSet, batch_size=self.batchSize, shuffle=True
+    self.decoder = Decoder(
+      latent_dim,
+      640 // downScaleFactor,
+      480 // downScaleFactor 
     )
 
-    numSamples = len(df)
-    numBatches = numSamples // self.batchSize
-    randomSampleIndeces = [1342, 941, 119, 823, 607, 414]
-
-    fixedImageSamples = trainLoader.dataset.tensors[0][randomSampleIndeces]
-    # Plot and save the generated images
-    fig, axs = plt.subplots(2, 3, figsize=(8, 6))
-    for i, ax in enumerate(axs.flatten()):
-        ax.imshow(fixedImageSamples[i][0], cmap='gray', vmin=0, vmax=1)
-        ax.axis('off')
-    plt.tight_layout()
-    
-    # title the plot
-    plt.suptitle(f"Orignal Images")
-    # save the plot
-    savePath = os.path.join('images', 'epochs', f'original.png')
-    plt.savefig(savePath)
-
-    optimizer = Adam(
-      self.model.parameters(),
+    self.optimizerEncoder = torch.optim.Adam(
+      self.encoder.parameters(),
       lr=self.learningRate
     )
-    
-    self.model.train()
-    for epoch in range(self.numEpochs):
-      overall_loss = 0
-      for n, (realImages, signal) in enumerate(trainLoader):
-        realImages = realImages.to(device=self.device)
-        signal = signal.to(self.device)
-
-        optimizer.zero_grad()
-
-        x_hat, mean, log_var = self.model(signal)
-        loss = self.lossFunction(realImages, x_hat, mean, log_var)
-
-        overall_loss += loss.item()
-
-        loss.backward()
-        optimizer.step()
-
-      print(f"Epoch: {epoch} Loss VAE.: {overall_loss / (n*numBatches)}")
-      print("--------------------------------------------------")
-
-      # Generate images using random latent samples
-      if epoch == 0:
-        fixedLatentSamples = trainLoader.dataset.tensors[1][randomSampleIndeces].to(self.device)
-      generatedImages = self.model(fixedLatentSamples)[0]
-      generatedImages = generatedImages.detach().cpu()
-
-      # Plot and save the generated images
-      fig, axs = plt.subplots(2, 3, figsize=(8, 6))
-      for i, ax in enumerate(axs.flatten()):
-          ax.imshow(generatedImages[i][0], cmap='gray', vmin=0, vmax=1)
-          ax.axis('off')
-      plt.tight_layout()
-      
-      # title the plot
-      plt.suptitle(f"Epoch {epoch}")
-      # save the plot
-      savePath = os.path.join('images', 'epochs', f'epoch_{str(epoch).zfill(3)}.png')
-      plt.savefig(savePath)
-
-  def test(self, df: DataFrame) -> None:
-    """
-    Test the model
-
-    :param test_df: test dataframe
-
-    :return: None
-    """
-    values, _ = self.getValuesAndLabels(df)
-    realImages = self.getImages(df, self.downScaleFactor)
-    values = torch.from_numpy(values).float()
-    testSet = torch.utils.data.TensorDataset(realImages, values)
-    testLoader = torch.utils.data.DataLoader(
-        testSet, batch_size=self.batchSize, shuffle=True
+    self.optimizerDecoder = torch.optim.Adam(
+      self.decoder.parameters(),
+      lr=self.learningRate
     )
+
+  def train(
+    self,
+    trainLoader
+  ) -> None:
+    for realImagesSamples, signalSamples in trainLoader:
+      signalSamples = signalSamples.to(self.device)
+      realImagesSamples = realImagesSamples.to(self.device)
+
+      self.optimizerEncoder.zero_grad()
+      self.optimizerDecoder.zero_grad()
+
+      latentSamples = self.encoder(signalSamples)
+      generatedImageSamples = self.decoder(latentSamples)
+
+      loss = ((realImagesSamples - generatedImageSamples) ** 2).sum() + self.encoder.kl.sum()
+      loss.backward()
+      self.optimizerEncoder.step()
+      self.optimizerDecoder.step()
+
+    return loss
+  
+  def test(
+    self,
+    testLoader,
+    losses: dict,
+  ):
+    testLoaderLen = len(testLoader)
+
+    for realImagesSamples, signalSamples in testLoader:
+      signalSamples = signalSamples.to(self.device)
+      realImagesSamples = realImagesSamples.to(self.device)
+
+      latentSamples = self.encoder(signalSamples)
+      generatedImageSamples = self.decoder(latentSamples)
+
+      losses = super().score(losses, realImagesSamples, generatedImageSamples)
     
-    totalLoss = 0
-    for realImages, signal in testLoader:
-      realImages = realImages.to(device=self.device)
-      signal = signal.to(self.device)
-
-      x_hat, mean, log_var = self.model(signal)
-      loss = self.lossFunction(realImages, x_hat, log_var)
-
-      totalLoss += loss.item()
-
-    return totalLoss / len(testLoader)
-
-
+    losses = {k: v / testLoaderLen for k, v in losses.items()}
+    return losses
+  
   def predict(self, df: DataFrame) -> None:
-    """
-    Predict the labels of the test data
-
-    :param predict_df: prediction dataframe
-
-    :return: predictions
-    """
     raise NotImplementedError
-    pass
+  
+  def varyParams(
+    self,
+    df_train: DataFrame,
+    df_test: DataFrame,
+    params: dict,
+  ) -> None:
+    
+    validParams = {}
+    for param in params.keys():
+      if super().isParamValid(param):
+        validParams[param] = params[param]
 
-  def getDefaultParams(self):
-    """
-    Get the default parameters
+    if validParams == {}:
+      print(
+        f'No valid parameters to vary for for {self.__class__.__name__} model.')
+      
+    losses = {
+      "BCE": 0,
+      "BCELogits": 0,
+      "CE": 0,
+      "MSE": 0,
+      "L1": 0,
+    }
 
-    :return: default parameters
-    """
-    raise NotImplementedError
-    pass
+    if os.path.exists(os.path.join('results', f'{self.__class__.__name__}.csv')):
+      df_results = read_csv(
+        os.path.join('results', f'{self.__class__.__name__}.csv')
+      )
+    else:
+      df_results = DataFrame({
+        'Model Name': [],
+        'Learning Rate': [],
+        'Down Scale Factor': [],
+        'Max Epoch': [],
+        'Batch Size': [],
+        'Noise': [],
+        'Epoch': [],
+        **{f'{k} Loss': [] for k in losses.keys()},
+        'Img ID': [],
+      })
+
+    for paramName in validParams.keys():
+      for param in validParams[paramName]:
+        # Get the values and labels
+        trainLoader = super().getLoader(df_train)
+        testLoader = super().getLoader(df_test)
+
+        fixedIndeces = [1342, 941, 119, 823, 607, 414]
+        fixedRealImages = testLoader.dataset.tensors[0][fixedIndeces]
+
+        uniqueID = ''.join([choice(ascii_letters) for i in range(10)])
+        imgDir = os.path.join('images', 'epochs', f'{self.__class__.__name__}', uniqueID)
+        os.makedirs(imgDir, exist_ok=True)
+        super().plotImages(imgDir, fixedRealImages, 'original.png', subtitle='Original Images')
+        resultsPath = os.path.join('results', f'{self.__class__.__name__}.csv')
+
+        defaultParams = self.getDefaultParams()
+        self.__init__(**defaultParams)
+        setattr(self, paramName, param)
+
+        for epoch in range(self.maxEpoch):
+
+          losses = {k: 0 for k in losses.keys()}
+
+          loss = self.train(trainLoader)
+          losses = self.test(
+            testLoader,
+            losses
+          )
+
+          print(f'Epoch: {epoch}\tLoss E.: {loss}\tLoss D.: {loss}')
+          if epoch == 0:
+            fixedSignalSamples = testLoader.dataset.tensors[1][fixedIndeces].to(self.device)
+          fixedLatentSamples = self.encoder(fixedSignalSamples)
+          fixedGeneratedImages = self.decoder(fixedLatentSamples)
+          fixedGeneratedImages = fixedGeneratedImages.detach().cpu()
+          self.plotImages(imgDir, fixedGeneratedImages, f'epoch_{str(epoch).zfill(3)}.png', subtitle=f'Epoch {epoch}')
+
+          df_newRow = DataFrame({
+            'Model Name': self.__class__.__name__,
+            'Learning Rate': self.learningRate,
+            'Down Scale Factor': self.downScaleFactor,
+            'Max Epoch': self.maxEpoch,
+            'Batch Size': self.batchSize,
+            'Noise': self.noise,
+            'Epoch': epoch,
+            **{f'{k} Loss': v for k, v in losses.items()},
+            'Img ID': uniqueID,
+          }, index=[0])
+          df_results = concat([df_results, df_newRow], axis=0)
+          df_results.to_csv(resultsPath, index=False)
+
+  @staticmethod
+  def getDefaultParams():
+    defaultParams = {
+      "learningRate": 0.0001,
+      "maxEpoch": 100,
+      "batchSize": 45,
+      "downScaleFactor": 32,
+      "noise": False,
+    }
+    return defaultParams

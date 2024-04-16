@@ -193,6 +193,7 @@ class IModel(ABC):
     # save the plot
     savePath = os.path.join(imgDir, fileName)
     plt.savefig(savePath)
+    plt.close()
 
   def getValuesAndLabels(
     self,

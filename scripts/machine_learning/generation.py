@@ -12,11 +12,11 @@ def runModels():
   df_train, df_test, df_val = getData()
 
   models = [
-    GAN(),
+    VAE(),
   ]
 
   params = {
-    'learningRate': [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001],
+    'downScaleFactor': [32, 20, 16]
   }
 
   for model in models:
