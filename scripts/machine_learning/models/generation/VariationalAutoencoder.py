@@ -5,7 +5,7 @@ from typing import Literal
 
 from pandas import DataFrame, concat, read_csv
 import torch
-from .IModel import IModel
+from ..IModel import IModel
 from .Encoder import Encoder
 from .Decoder import Decoder
 

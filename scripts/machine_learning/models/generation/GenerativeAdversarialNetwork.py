@@ -10,7 +10,7 @@ from pandas import DataFrame, concat, read_csv
 
 from .Discriminator import Discriminator
 from .Generator import Generator
-from .IModel import IModel
+from ..IModel import IModel
 
 
 class GenerativeAdversarialNetwork(IModel):

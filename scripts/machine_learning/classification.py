@@ -15,7 +15,7 @@ def runModels():
   df_train, df_test, df_val = getData()
 
   models = [
-    NeuralNetwork(),
+    NN(),
   ]
   params = {
     'activation': ['relu', 'tanh'],

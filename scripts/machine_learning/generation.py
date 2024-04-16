@@ -2,7 +2,8 @@ import os
 from typing import List, Literal
 
 
-from models import GAN, VAE
+from models import VariationalAutoencoder as VAE
+from models import GenerativeAdversarialNetwork as GAN
 import pandas as pd
 
 def runModels():

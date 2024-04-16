@@ -3,7 +3,7 @@ from sklearn.neighbors import NearestCentroid as NearestCentroidClassifier
 from pandas import DataFrame
 from typing import List, Literal
 
-from .IModel import IModel
+from ..IModel import IModel
 
 class NearestCentroid(IModel):
   def __init__(

@@ -1,12 +1,4 @@
-from models.DecisionTree import DecisionTree
-from models.KNearestNeighbors import KNearestNeighbors
-from models.NearestCentroid import NearestCentroid
-from models.RandomForest import RandomForest
-from models.SupportVectorMachine import SupportVectorMachine
-from models.StochasticGradientDescent import StochasticGradientDescent
-from models.NeuralNetwork import NeuralNetwork
+from .IModel import IModel
 
-from models.GenerativeAdversarialNetwork import GenerativeAdversarialNetwork as GAN
-from models.VariationalAutoencoder import VariationalAutoencoder as VAE
-
-from models.IModel import IModel
+from .classification import DecisionTree, KNearestNeighbors, NearestCentroid, NeuralNetwork, RandomForest, StochasticGradientDescent, SupportVectorMachine
+from .generation import GenerativeAdversarialNetwork, VariationalAutoencoder

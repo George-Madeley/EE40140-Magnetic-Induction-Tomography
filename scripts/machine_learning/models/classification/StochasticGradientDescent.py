@@ -1,11 +1,11 @@
 from typing import List, Literal, Union
 
-from sklearn.svm import SVC
+from sklearn.linear_model import SGDClassifier
 from pandas import DataFrame
 
-from .IModel import IModel
+from ..IModel import IModel
 
-class SupportVectorMachine(IModel):
+class StochasticGradientDescent(IModel):
   def __init__(
       self,
       labelName: Literal['shape', 'sample'] = 'shape',
@@ -13,33 +13,28 @@ class SupportVectorMachine(IModel):
       oneHotEncode: bool = False
     ):
     """
-    Initializes a SupportVectorMachine object.
+    Initializes a StochasticGradientDescent object.
 
     Returns:
     - None
     """
     self.validParams = {
-      'C': [0.1, 1, 10, 100],
-      'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
-      'degree': list(range(1, 6)),
-      'gamma': ['scale', 'auto'],
-      'coef0': [0.0, 1.0],
-      'shrinking': [True, False],
-      'probability': [True, False],
-      'tol': [1e-3, 1e-4, 1e-5],
-      'cache_size': [200, 400, 600, 800, 1000],
-      'class_weight': [None, 'balanced'],
-      'verbose': [False],
-      'max_iter': [-1],
-      'decision_function_shape': ['ovo', 'ovr'],
-      'break_ties': [False],
-      'random_state': [None],
+      'loss': ['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron'],
+      'penalty': ['l2', 'l1', 'elasticnet'],
+      'alpha': [x / 100 for x in range(1, 101)],
+      'l1_ratio': [x / 100 for x in range(1, 101)],
+      'fit_intercept': [True, False],
+      'max_iter': list(range(1, 1001)),
+      'tol': [x / 100 for x in range(1, 101)],
+      'shuffle': [True, False],
+      'epsilon': [x / 100 for x in range(1, 101)],
+      'n_jobs': [-1, None],
     }
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
-    self.model = SVC()
-  
+    self.model = SGDClassifier()
+
   def train(self, df: DataFrame) -> None:
     """
     Train the model
@@ -68,20 +63,32 @@ class SupportVectorMachine(IModel):
   
   def predict(self, df: DataFrame) -> List[Union[float, List[float]]]:
     """
-    Predict the labels of the test data
+    Predict the labels of the given data
 
-    :param test_df: test dataframe
-    :param noise: whether to include background noise
+    :param df: the data to predict
+
+    :return: the predicted labels
     """
     values, _ = super().getValuesAndLabels(df, self.labelName, self.noise)
 
     return self.model.predict(values)
   
-  def getDefaultParams(self):
+  def predictProba(self, df: DataFrame) -> List[List[float]]:
     """
-    Get the default parameters for the model
-    
-    Returns:
-    - dict: default parameters
+    Predict the probabilities of the given data
+
+    :param df: the data to predict
+
+    :return: the predicted probabilities
+    """
+    values, _ = super().getValuesAndLabels(df, self.labelName, self.noise)
+
+    return self.model.predict_proba(values)
+  
+  def getDefaultParams(self) -> dict:
+    """
+    Get the default parameters
+
+    :return: default parameters
     """
     return self.model.get_params()

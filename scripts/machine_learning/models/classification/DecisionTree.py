@@ -2,7 +2,7 @@ from typing import Literal
 from pandas import DataFrame
 from sklearn.tree import DecisionTreeClassifier
 
-from .IModel import IModel
+from ..IModel import IModel
 
 class DecisionTree(IModel):
   def __init__(

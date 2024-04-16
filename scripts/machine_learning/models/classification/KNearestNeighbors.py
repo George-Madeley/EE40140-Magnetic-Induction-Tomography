@@ -3,7 +3,7 @@ from typing import List, Literal, Union
 from sklearn.neighbors import KNeighborsClassifier
 from pandas import DataFrame
 
-from .IModel import IModel
+from ..IModel import IModel
 class KNearestNeighbors(IModel):
   def __init__(
       self,

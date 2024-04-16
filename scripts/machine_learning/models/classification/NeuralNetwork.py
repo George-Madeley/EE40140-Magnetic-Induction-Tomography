@@ -3,7 +3,7 @@ from typing import List, Literal, Union
 from sklearn.neural_network import MLPClassifier
 from pandas import DataFrame
 
-from .IModel import IModel
+from ..IModel import IModel
 
 class NeuralNetwork(IModel):
   def __init__(
