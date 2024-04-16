@@ -23,11 +23,6 @@ class RandomForest(IModel):
       'n_estimators': list(range(1, 1001)),
       'criterion': ['gini', 'entropy', 'log_loss'],
       'max_depth': list(range(1, 101)),
-      'min_samples_split': list(range(2, 21)),
-      'min_samples_leaf': list(range(1, 21)),
-      'max_features': ['sqrt', 'log2', None],
-      'max_leaf_nodes': list(range(2, 101)),
-      'min_impurity_decrease': [x / 100 for x in range(0, 101)],
     }
     self.labelName = labelName
     self.noise = noise

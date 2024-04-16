@@ -20,10 +20,7 @@ class KNearestNeighbors(IModel):
     self.validParams = {
       'weights': ['uniform', 'distance'],
       'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
-      'leaf_size': list(range(1, 101)),
-      'p': [1, 2],
       'metric': ['minkowski', 'euclidean', 'manhattan', 'chebyshev'],
-      'n_jobs': [-1, None],
       'n_neighbors': list(range(1, 101)),
     }
     self.labelName = labelName

@@ -22,10 +22,6 @@ class DecisionTree(IModel):
       "criterion": ["gini", "entropy", "log_loss"],
       "splitter": ["best", "random"],
       "max_depth": list(range(1, 1001)),
-      "min_samples_split": list(range(1, 1001)),
-      "min_samples_leaf": list(range(1, 1001)),
-      "max_features": ["sqrt", "log2"],
-      "max_leaf_nodes": list(range(1, 1001))
     }
     self.labelName = labelName
     self.noise = noise

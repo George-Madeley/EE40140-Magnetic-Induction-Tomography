@@ -22,18 +22,7 @@ class SupportVectorMachine(IModel):
       'C': [0.1, 1, 10, 100],
       'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
       'degree': list(range(1, 6)),
-      'gamma': ['scale', 'auto'],
-      'coef0': [0.0, 1.0],
-      'shrinking': [True, False],
-      'probability': [True, False],
-      'tol': [1e-3, 1e-4, 1e-5],
       'cache_size': [200, 400, 600, 800, 1000],
-      'class_weight': [None, 'balanced'],
-      'verbose': [False],
-      'max_iter': [-1],
-      'decision_function_shape': ['ovo', 'ovr'],
-      'break_ties': [False],
-      'random_state': [None],
     }
     self.labelName = labelName
     self.noise = noise

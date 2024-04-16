@@ -21,7 +21,6 @@ class NearestCentroid(IModel):
     """
     self.validParams = {
       'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
-      'shrink_threshold': ['None']
     }
     self.labelName = labelName
     self.noise = noise

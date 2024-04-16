@@ -21,11 +21,9 @@ class NeuralNetwork(IModel):
     self.validParams = {
       'hidden_layer_sizes': [(100,), (100, 100), (100, 100, 100)],
       'activation': ['identity', 'logistic', 'tanh', 'relu'],
-      'solver': ['lbfgs', 'sgd', 'adam'],
       'alpha': [0.0001, 0.001, 0.01, 0.1],
       'learning_rate': ['constant', 'invscaling', 'adaptive'],
       'max_iter': list(range(100, 1001, 100)),
-      'early_stopping': [True, False],
     }
     self.labelName = labelName
     self.noise = noise

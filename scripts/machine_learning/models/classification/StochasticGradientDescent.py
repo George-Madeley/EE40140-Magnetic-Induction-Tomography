@@ -21,14 +21,8 @@ class StochasticGradientDescent(IModel):
     self.validParams = {
       'loss': ['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron'],
       'penalty': ['l2', 'l1', 'elasticnet'],
-      'alpha': [x / 100 for x in range(1, 101)],
-      'l1_ratio': [x / 100 for x in range(1, 101)],
-      'fit_intercept': [True, False],
       'max_iter': list(range(1, 1001)),
-      'tol': [x / 100 for x in range(1, 101)],
-      'shuffle': [True, False],
       'epsilon': [x / 100 for x in range(1, 101)],
-      'n_jobs': [-1, None],
     }
     self.labelName = labelName
     self.noise = noise
