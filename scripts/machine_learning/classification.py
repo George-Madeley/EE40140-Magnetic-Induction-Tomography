@@ -12,22 +12,11 @@ def runModels():
   '''
   Run all models on the data
   '''
-  df_train, df_test, df_val = getData()
-
-  models = [
-    DecisionTree(),
-    KNearestNeighbors(),
-    NearestCentroid(),
-    NeuralNetwork(),
-    RandomForest(),
-    StochasticGradientDescent(),
-    SupportVectorMachine(),
-  ]
   params = {
       'activation': ['identity', 'logistic', 'tanh', 'relu'],
       'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
       'alpha': [0.0001, 0.001, 0.01, 0.1],
-      'C': [0.1, 1, 10, 100],
+      # 'C': [0.1, 1, 10, 100],
       'cache_size': [200, 400, 600, 800, 1000],
       "criterion": ["gini", "entropy", "log_loss"],
       'degree': list(range(1, 6)),
@@ -40,19 +29,53 @@ def runModels():
       'max_iter': list(range(100, 1001, 100)),
       'metric': ['minkowski', 'euclidean', 'manhattan', 'chebyshev'],
       'n_estimators': list(range(1, 1001, 100)),
-      'n_neighbors': list(range(1, 31, 3)),
+      'n_neighbors': list(range(3, 31, 3)),
       'penalty': ['l2', 'l1', 'elasticnet'],
       "splitter": ["best", "random"],
       'weights': ['uniform', 'distance'],
   }
-  for model in models:
-    print(f'Running {model.__class__.__name__}')
-    model.varyParams(
-        df_train,
-        params,
-        searchCV=GridSearchCV,
-        verbose=2,
-    )
+
+  
+  for material in ['iron', 'copper']:
+    print(f'Running models on {material}')
+    df_train, df_test, df_val = getData(material=material)
+    for noise in [True, False]:
+      print(f'Running models with noise={noise}')
+      models = [
+        # KNearestNeighbors(noise=noise),
+        # DecisionTree(noise=noise),
+        # NearestCentroid(noise=noise),
+        # RandomForest(noise=noise),
+        NeuralNetwork(noise=True),
+        # StochasticGradientDescent(noise=noise),
+        # SupportVectorMachine(noise=noise),
+      ]
+      for model in models:
+        scoring = {
+          'Accuracy': 'accuracy',
+          'F1': 'f1_micro',
+          'Precision': 'precision_micro',
+          'Recall': 'recall_micro',
+        }
+
+        if (
+          model.__class__.__name__ == 'NeuralNetwork' or
+          model.__class__.__name__ == 'KNearestNeighbors' or
+          model.__class__.__name__ == 'DecisionTree' or
+          model.__class__.__name__ == 'RandomForest'
+          ):
+          scoring['AUC'] = 'roc_auc_ovr'
+
+        print(f'Running {model.__class__.__name__}')
+        model.varyParams(
+            df_train,
+            params,
+            searchCV=GridSearchCV,
+            verbose=2,
+            material=material,
+            scoring=scoring,
+            numSamples=240 if noise else 120
+        )
 
 
 def getData(material: Literal['iron', 'copper'] = 'iron'):
