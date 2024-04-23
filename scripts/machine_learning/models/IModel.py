@@ -2,6 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from random import choice
 from string import ascii_letters
+from typing import Literal
 
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from matplotlib import pyplot as plt
@@ -59,7 +60,9 @@ class IModel(ABC):
       searchCV: type[GridSearchCV | RandomizedSearchCV],
       scoring: dict = None,
       n_jobs: int = -1,
-      verbose: int = 0
+      verbose: int = 0,
+      material: Literal['iron', 'copper'] = 'iron',
+      numSamples: Literal[120, 240] = 120,
     ) -> None:
     """
     Vary the parameters of the model
@@ -78,7 +81,6 @@ class IModel(ABC):
     if scoring is None:
       scoring = {
         'Accuracy': 'accuracy',
-        'AUC': 'roc_auc_ovr',
         'F1': 'f1_micro',
         'Precision': 'precision_micro',
         'Recall': 'recall_micro',
@@ -96,20 +98,19 @@ class IModel(ABC):
     )
     clf.fit(values, labels)
 
-    df_results = concat(
-      [
-        DataFrame(clf.cv_results_['params'])
-      ] + [
-        DataFrame(
-          clf.cv_results_[f'mean_test_{metric}'],
-          columns=[metric]
-        ) for metric in scoring.keys()
-      ],
-      axis=1
-    )
+    df_results = concat([
+      DataFrame(clf.cv_results_['params']),
+      DataFrame({metric: clf.cv_results_[f'mean_test_{metric}'] for metric in scoring.keys()}),
+      DataFrame(clf.cv_results_['mean_fit_time'], columns=['mean_fit_time']),
+      DataFrame(clf.cv_results_['std_fit_time'], columns=['std_fit_time']),
+      DataFrame(clf.cv_results_['mean_score_time'], columns=['mean_score_time']),
+      DataFrame(clf.cv_results_['std_score_time'], columns=['std_score_time'])
+    ], axis=1)
 
     # Add the column 'model' to the dataframe and set it to the model name
     df_results.insert(0, 'model', self.__class__.__name__)
+    df_results.insert(1, 'material', material)
+    df_results.insert(2, 'numSamples', numSamples)
 
     # Generate a random string
     randomString = ''.join(
@@ -123,6 +124,7 @@ class IModel(ABC):
       saveFilePath,
       index=False
     )
+
 
   def isParamValid(self, name: str, value=None):
     """
