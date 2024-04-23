@@ -12,7 +12,7 @@ def plot_shape_counts():
   sample_counts = data.groupby('sample').size()
 
   # Define the colors for the stacked bars
-  colors = ['darkgrey', 'orange']
+  colors = ['blue', 'orange']
 
   # Filter the data for samples with 'H' or copperer
   copper_samples = data[data['sample'] >= 'H']
@@ -27,16 +27,20 @@ def plot_shape_counts():
   iron_sample_counts = iron_samples.groupby('shape').size()
 
   # Plot the stacked bar chart
-  plt.bar(iron_sample_counts.index, iron_sample_counts, color=colors[0], label='iron')
-  plt.bar(copper_sample_counts.index, copper_sample_counts, bottom=iron_sample_counts, color=colors[1], label='copper')
+  plt.bar(iron_sample_counts.index, iron_sample_counts, color=colors[0], label='Iron Samples')
+  plt.bar(copper_sample_counts.index, copper_sample_counts, bottom=iron_sample_counts, color=colors[1], label='Copper Samples')
 
   # Add labels and legend
   plt.xlabel('Shape')
   plt.ylabel('Number of Records')
-  plt.legend()
+  plt.title('Shape Counts')
 
-  # Show the plot
-  plt.show()
+  # plot a key
+  plt.legend()
+  
+  # Save the plot to a file
+  plt.savefig('./images/graphs/shape_counts.png', dpi=300, bbox_inches='tight')
+  plt.close()
 
 if __name__ == '__main__':
   # Call the function to generate the plot
