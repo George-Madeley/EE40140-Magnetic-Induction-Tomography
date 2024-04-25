@@ -110,7 +110,9 @@ def graphPlot(x_feature, y_feature, hue, data, model, indicators=False, stat='me
   data[y_feature] = data[y_feature].astype(str)
 
   # remove rows where max_depth is 1
-  data = data[data[x_feature] != 1].reset_index(drop=True)
+  # data = data[data[x_feature] != '1'].reset_index(drop=True)
+  # data = data[data[y_feature] != 'log'].reset_index(drop=True)
+
 
   # create a dummy scatter plot to define a mappable for the colorbar creation
   dummy_plot = plt.scatter([], [], c=[], cmap=cmap)
