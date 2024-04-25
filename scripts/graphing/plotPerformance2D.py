@@ -30,7 +30,9 @@ def plotPerformance2D(model: str) -> None:
     indicators = False
     stat = 'min'
     size = 200
-    cmap = 'RdBu'
+    cmap = 'RdYlGn'
+
+    # cmap options: 'plasma', 'binary', 'YlGn'
 
     # Check if the features are in the data.
     if x_feature not in data.columns:
@@ -55,9 +57,11 @@ def plotPerformance2D(model: str) -> None:
 
     # plot a scatter plot with the mean accuracy
     sns.scatterplot(data=data, x=x_feature, y=y_feature, hue=stat, palette=cmap, s=size)
-    plt.xlabel(x_feature.replace('_', ' ').title())
-    plt.ylabel(y_feature.replace('_', ' ').title())
-    plt.title(f'{model} Performance')
+    plt.xlabel(formatString(x_feature))
+    plt.ylabel(formatString(y_feature))
+    plt.gca().set_xticklabels([formatString(label.get_text()) for label in plt.gca().get_xticklabels()])
+    plt.gca().set_yticklabels([formatString(label.get_text()) for label in plt.gca().get_yticklabels()])
+    plt.title(f'{formatString(model)} Performance')
     plt.legend().remove()
     
     if indicators:
@@ -68,8 +72,36 @@ def plotPerformance2D(model: str) -> None:
     # Add a color bar
     plt.colorbar(dummy_plot, label=hue)
     plt.clim(data[stat].min(), data[stat].max())
-    
-    plt.show()
+
+    plt.tight_layout()
+
+    print('\t\t Filename: ')
+    fileName = str(input('>?\t'))
+
+    if fileName != '':
+        os.path.join('images', 'graphs', f'{fileName}.png')
+        plt.savefig(fileName)
+    else:
+        plt.show()
+
+    plt.close()
+
+def formatString(string: str) -> str:
+    """
+    Formats a string to be more readable.
+
+    Args:
+        string (str): The string to format.
+
+    Returns:
+        str: The formatted string.
+    """
+    # if there is a captial letter in the string that is not the first letter
+    # add a space before it
+    for i in range(1, len(string)):
+      if string[i].isupper() and string[i-1] != ' ':
+        string = string[:i] + ' ' + string[i:]
+    return string.replace('_', ' ').title()
 
 if __name__ == '__main__':
     model = 'DecisionTree'
