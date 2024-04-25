@@ -28,21 +28,23 @@ def plotPerformance2D(model: str) -> None:
     features = data.columns[data.columns.get_loc('numSamples') + 1 :data.columns.get_loc('Accuracy')]
 
     # Get the top two features with the largest standard deviation in the
-    # accuracy. This is done by grouping the data by each feature and
-    # calculating the average accuracy for each group. The standard deviation
-    # of the accuracy is then calculated and the top two features with the
-    # largest standard deviation are selected.
-    feature_stds = {f:0 for f in features}
-    for feature in features:
-        feature_mean_accuracy = data.groupby(feature).agg({'Accuracy': 'mean'}).reset_index()
-        # Get the values from the accuracy column in feature_mean_accuracy
-        accuracy_values = feature_mean_accuracy['Accuracy'].values
-        # Calculate the standard deviation of the accuracy_values array
-        std = np.std(accuracy_values)
-        feature_stds[feature] = std
+    # accuracy. This is done by creating a list of features then selecting
+    # two features. The data is then grouped by these two features and the mean
+    # accuracy for each group is calculated. An array of the mean accuracy is
+    # then created and the standard deviation of this array is calculated. The
+    # two features with the largest standard deviation are selected.
+    top_features = []
+    for x_feature in features:
+      for y_feature in features:
+        if x_feature == y_feature:
+          continue
+        data_grouped = data.groupby([x_feature, y_feature]).agg({'Accuracy': 'mean'}).reset_index()
+        accuracy = data_grouped['Accuracy'].values
+        std = np.std(accuracy)
+        top_features.append((x_feature, y_feature, std))
 
-    # Get the top two features with the largest standard deviation
-    top_features = sorted(feature_stds, key=feature_stds.get, reverse=True)[:2]
+    top_features = sorted(top_features, key=lambda x: x[2], reverse=True)
+    top_features = top_features[0][:2]
 
     # Calculate the number of unique values for each feature
     num_unique_values = {f:0 for f in top_features}
@@ -54,7 +56,7 @@ def plotPerformance2D(model: str) -> None:
 
     y_feature = top_features[0]
     x_feature = top_features[1]
-    
+
     hue = 'Accuracy'
     indicators = False
     stat = 'min'
@@ -104,12 +106,12 @@ def plotPerformance2D(model: str) -> None:
 
     plt.tight_layout()
 
-    print('\t\t Filename: ')
+    print('\n\n Filename: ')
     fileName = str(input('>?\t'))
 
     if fileName != '':
-        os.path.join('images', 'graphs', f'{fileName}.png')
-        plt.savefig(fileName)
+        filePath = os.path.join('images', 'graphs', f'{fileName}.png')
+        plt.savefig(filePath)
     else:
         plt.show()
 
