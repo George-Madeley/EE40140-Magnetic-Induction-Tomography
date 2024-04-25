@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 import pandas as pd
 
@@ -23,9 +24,37 @@ def plotPerformance2D(model: str) -> None:
     # Concatenate all the dataframes.
     data = pd.concat(dfs)
 
-    # define the features for the x and y axes
-    x_feature = 'max_depth'
-    y_feature = 'criterion'
+    # get the column names between 'num_samples' and 'Accuracy'
+    features = data.columns[data.columns.get_loc('numSamples') + 1 :data.columns.get_loc('Accuracy')]
+
+    # Get the top two features with the largest standard deviation in the
+    # accuracy. This is done by grouping the data by each feature and
+    # calculating the average accuracy for each group. The standard deviation
+    # of the accuracy is then calculated and the top two features with the
+    # largest standard deviation are selected.
+    feature_stds = {f:0 for f in features}
+    for feature in features:
+        feature_mean_accuracy = data.groupby(feature).agg({'Accuracy': 'mean'}).reset_index()
+        # Get the values from the accuracy column in feature_mean_accuracy
+        accuracy_values = feature_mean_accuracy['Accuracy'].values
+        # Calculate the standard deviation of the accuracy_values array
+        std = np.std(accuracy_values)
+        feature_stds[feature] = std
+
+    # Get the top two features with the largest standard deviation
+    top_features = sorted(feature_stds, key=feature_stds.get, reverse=True)[:2]
+
+    # Calculate the number of unique values for each feature
+    num_unique_values = {f:0 for f in top_features}
+    for feature in top_features:
+        num_unique_values[feature] = len(data[feature].unique())
+
+    # Sort the features by the number of unique values
+    top_features = sorted(num_unique_values, key=num_unique_values.get)
+
+    y_feature = top_features[0]
+    x_feature = top_features[1]
+    
     hue = 'Accuracy'
     indicators = False
     stat = 'min'
