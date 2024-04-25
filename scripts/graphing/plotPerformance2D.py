@@ -105,6 +105,10 @@ def graphPlot(x_feature, y_feature, hue, data, model, indicators=False, stat='me
   data = data.groupby([x_feature, y_feature]).agg({hue: ['min', 'max', 'mean']}).reset_index()
   data.columns = [x_feature, y_feature, 'min', 'max', 'mean']
 
+  # Set the data type of the features to string
+  data[x_feature] = data[x_feature].astype(str)
+  data[y_feature] = data[y_feature].astype(str)
+
   # remove rows where max_depth is 1
   data = data[data[x_feature] != 1].reset_index(drop=True)
 
