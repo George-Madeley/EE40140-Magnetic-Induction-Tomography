@@ -4,6 +4,7 @@ from typing import List, Literal
 
 from models import VariationalAutoencoder as VAE
 from models import GenerativeAdversarialNetwork as GAN
+from models import GenerationNeuralNetwork as NN
 import pandas as pd
 
 def runModels():
@@ -12,20 +13,25 @@ def runModels():
   """
   df_train, df_test, df_val = getData()
 
-  models = [
-    VAE(),
-  ]
+  structureNN = [480]
 
-  params = {
-    'downScaleFactor': [32, 20, 16]
-  }
+  models = [
+    NN(
+      labelName='shape',
+      noise=True,
+      downScaleFactor=8,
+      structure=structureNN,
+      batchSize=16,
+      learningRate=0.001,
+      maxEpochs=100,
+    ),
+  ]
 
   for model in models:
     print(f"Running {model.__class__.__name__}")
-    model.varyParams(
+    model.run(
         df_train,
         df_test,
-        params,
     )
   
 
