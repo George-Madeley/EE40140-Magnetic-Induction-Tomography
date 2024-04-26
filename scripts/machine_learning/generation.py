@@ -13,14 +13,17 @@ def runModels():
   """
   df_train, df_test, df_val = getData()
 
-  structureNN = [480]
+  structureNN = {
+    'NN1': [480]
+  }
 
   models = [
     NN(
       labelName='shape',
       noise=True,
       downScaleFactor=8,
-      structure=structureNN,
+      structure=structureNN.get('NN1'),
+      name='NN1',
       batchSize=16,
       learningRate=0.001,
       maxEpochs=100,

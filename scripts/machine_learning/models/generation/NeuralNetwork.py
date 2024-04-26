@@ -31,6 +31,8 @@ class NeuralNetwork(IModel):
     self.learningRate = kwargs.get("learningRate")
     self.maxEpoch = kwargs.get("maxEpochs")
 
+    self.name = kwargs.get("name", self.__class__.__name__)
+
     self.device = ""
     if torch.cuda.is_available():
       self.device = torch.device("cuda")
@@ -109,7 +111,7 @@ class NeuralNetwork(IModel):
     }
 
     uniqueID = ''.join([choice(ascii_letters) for i in range(10)])
-    resultsPath = os.path.join('results', f'{self.__class__.__name__} - {uniqueID}.csv')
+    resultsPath = os.path.join('results', 'generation', f'{self.name} - {uniqueID}.csv')
     df_results = DataFrame({
       'Model Name': [],
       'Learning Rate': [],
@@ -118,7 +120,6 @@ class NeuralNetwork(IModel):
       'Noise': [],
       'Epoch': [],
       **{f'{k} Loss': [] for k in losses.keys()},
-      'Img ID': [],
     })
 
     # Get the values and labels
@@ -128,8 +129,7 @@ class NeuralNetwork(IModel):
     fixedIndeces = [1342, 941, 119, 823, 607, 414]
     fixedRealImages = testLoader.dataset.tensors[0][fixedIndeces]
 
-    uniqueID = ''.join([choice(ascii_letters) for i in range(10)])
-    imgDir = os.path.join('images', 'epochs', f'{self.__class__.__name__}', uniqueID)
+    imgDir = os.path.join('images', 'generated', self.__class__.__name__, self.name, uniqueID)
     os.makedirs(imgDir, exist_ok=True)
     super().plotImages(imgDir, fixedRealImages, 'original.png', subtitle='Original Images')
 
@@ -158,7 +158,6 @@ class NeuralNetwork(IModel):
         'Noise': self.noise,
         'Epoch': epoch,
         **{f'{k} Loss': v for k, v in losses.items()},
-        'Img ID': uniqueID,
       }, index=[0])
       df_results = concat([df_results, df_newRow], axis=0)
       df_results.to_csv(resultsPath, index=False)
