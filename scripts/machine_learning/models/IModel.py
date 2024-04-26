@@ -170,7 +170,8 @@ class IModel(ABC):
     imgDir: str,
     fixedImageSamples,
     fileName: str,
-    subtitle: str
+    subtitle: str,
+    labels: list[str] = None
   ):
     """
     Plot and save a grid of images.
@@ -184,11 +185,16 @@ class IModel(ABC):
     Returns:
       None
     """
-    fig, axs = plt.subplots(2, 3, figsize=(8, 6))
+    numRows = len(fixedImageSamples) // 2
+    fig, axs = plt.subplots(numRows, 2)
     for i, ax in enumerate(axs.flatten()):
       ax.imshow(fixedImageSamples[i][0], cmap='gray', vmin=0, vmax=1)
       ax.axis('off')
-    plt.tight_layout()
+
+    if labels is None:
+      labels = [f'({chr(97 + i)})' for i in range(len(fixedImageSamples))]
+    for i, ax in enumerate(axs.flatten()):
+      ax.set_title(labels[i])
 
     # title the plot
     plt.suptitle(subtitle)
@@ -295,7 +301,7 @@ class IModel(ABC):
     dataSet = torch.utils.data.TensorDataset(images, values)
 
     dataLoader = torch.utils.data.DataLoader(
-        dataSet, batch_size=self.batchSize, shuffle=True
+        dataSet, batch_size=self.batchSize, shuffle=False
     )
 
     return dataLoader

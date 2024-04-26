@@ -100,6 +100,7 @@ class NeuralNetwork(IModel):
     self,
     df_train: DataFrame,
     df_test: DataFrame,
+    fixedIndeces: list[int] = None,
   ) -> None:
       
     losses = {
@@ -126,7 +127,8 @@ class NeuralNetwork(IModel):
     trainLoader = super().getLoader(df_train)
     testLoader = super().getLoader(df_test)
 
-    fixedIndeces = [1342, 941, 119, 823, 607, 414]
+    if fixedIndeces is None:
+      fixedIndeces = [1342, 1239, 119, 1234, 1235, 607, 414, 941]
     fixedRealImages = testLoader.dataset.tensors[0][fixedIndeces]
 
     imgDir = os.path.join('images', 'generated', self.__class__.__name__, self.name, uniqueID)
