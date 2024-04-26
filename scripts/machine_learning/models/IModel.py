@@ -186,18 +186,26 @@ class IModel(ABC):
       None
     """
     numRows = len(fixedImageSamples) // 2
-    fig, axs = plt.subplots(numRows, 2)
+    fig, axs = plt.subplots(numRows, 2, figsize=(8, 16))
+
+    imgH = fixedImageSamples.shape[2]
+    imgW = fixedImageSamples.shape[3]
+    imgMargin = (imgW - imgH) // 2
+
     for i, ax in enumerate(axs.flatten()):
-      ax.imshow(fixedImageSamples[i][0], cmap='gray', vmin=0, vmax=1)
+      image = fixedImageSamples[i][0]
+      # crop the image to a square at the center
+      image = image[:, imgMargin:imgMargin + imgH]
+      ax.imshow(image, cmap='gray', vmin=0, vmax=1)
       ax.axis('off')
 
     if labels is None:
       labels = [f'({chr(97 + i)})' for i in range(len(fixedImageSamples))]
     for i, ax in enumerate(axs.flatten()):
-      ax.set_title(labels[i])
+      ax.set_title(labels[i], fontsize=18)
 
     # title the plot
-    plt.suptitle(subtitle)
+    plt.suptitle(subtitle, fontsize=20)
     # save the plot
     savePath = os.path.join(imgDir, fileName)
     plt.savefig(savePath)
