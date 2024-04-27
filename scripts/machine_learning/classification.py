@@ -15,9 +15,24 @@ def runModels():
   params = {
       'activation': ['identity', 'logistic', 'tanh', 'relu'],
       'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
+      'alpha': [0.0001, 0.001, 0.01, 0.1],
+      'C': [0.1, 1, 10, 100],
       'cache_size': [200, 400, 600, 800, 1000],
+      "criterion": ["gini", "entropy", "log_loss"],
       'degree': list(range(1, 6)),
+      'epsilon': [x / 100 for x in range(1, 101, 10)],
+      'hidden_layer_sizes': [(100,), (100, 100), (100, 100, 100)],
+      'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+      'learning_rate': ['constant', 'invscaling', 'adaptive'],
+      'loss': ['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron'],
+      "max_depth": list(range(1, 1001, 100)),
+      'max_iter': list(range(100, 1001, 100)),
       'metric': ['minkowski', 'euclidean', 'manhattan', 'chebyshev'],
+      'n_estimators': list(range(1, 1001, 100)),
+      'n_neighbors': list(range(3, 31, 3)),
+      'penalty': ['l2', 'l1', 'elasticnet'],
+      "splitter": ["best", "random"],
+      'weights': ['uniform', 'distance'],
   }
 
   
