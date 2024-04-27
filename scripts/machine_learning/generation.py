@@ -28,23 +28,18 @@ def runModels():
     #   learningRate=0.001,
     #   maxEpochs=100,
     # ),
-    # GAN(
-    #   labelName='shape',
-    #   noise=True,
-    #   downScaleFactor=8,
-    #   name='GAN1',
-    #   batchSize=45,
-    #   learningRate=0.0001,
-    #   maxEpochs=100,
-    # )
-    VAE(
+    GAN(
       labelName='shape',
       noise=True,
       downScaleFactor=8,
-      name='VAE1',
+      name='GAN1',
       batchSize=45,
       learningRate=0.0001,
       maxEpochs=100,
+      structure={
+        'discriminator': [15, 240],
+        'generator': [480, 960]
+      }
     )
   ]
 

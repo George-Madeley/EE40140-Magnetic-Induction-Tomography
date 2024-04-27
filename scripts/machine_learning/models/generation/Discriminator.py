@@ -24,22 +24,29 @@ class Discriminator(nn.Module):
 
   """
 
-  def __init__(self, width: int, height: int):
+  def __init__(
+      self,
+      width: int,
+      height: int,
+      structure: list[int],
+    ):
     super().__init__()
+
+    layers = [
+        nn.Linear(width * height, structure[0]),
+        nn.ReLU(),
+    ]
+    for i in range(len(structure) - 1):
+      layers.append(nn.Linear(structure[i], structure[i + 1]))
+      layers.append(nn.ReLU())
+
+    layers.append(nn.Linear(structure[-1], 1))
+    layers.append(nn.Sigmoid())
+
     self.width = width
     self.height = height
     self.model = nn.Sequential(
-        nn.Linear(width * height, 1024),
-        nn.ReLU(),
-        nn.Dropout(0.3),
-        nn.Linear(1024, 512),
-        nn.ReLU(),
-        nn.Dropout(0.3),
-        nn.Linear(512, 256),
-        nn.ReLU(),
-        nn.Dropout(0.3),
-        nn.Linear(256, 1),
-        nn.Sigmoid(),
+      *layers
     )
 
   def forward(self, x: Tensor) -> Tensor:

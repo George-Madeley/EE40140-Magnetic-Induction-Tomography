@@ -9,7 +9,7 @@ from .IGeneration import IGeneration
 
 
 class GenerativeAdversarialNetwork(IGeneration):
-  def __init__(self, **kwargs):
+  def __init__(self, structure, **kwargs):
     """
     Initialize a GenerativeAdversarialNetwork object.
 
@@ -19,14 +19,19 @@ class GenerativeAdversarialNetwork(IGeneration):
     """
     super().__init__(**kwargs)
 
+    discriminatorStructure = structure.get('discriminator')
+    generatorStructure = structure.get('generator')
+
     self.discriminator = Discriminator(
       640 // self.downScaleFactor,
-      480 // self.downScaleFactor
+      480 // self.downScaleFactor,
+      discriminatorStructure
     ).to(self.device)
     self.generator = Generator(
       240 if self.noise else 120,
       640 // self.downScaleFactor,
-      480 // self.downScaleFactor
+      480 // self.downScaleFactor,
+      generatorStructure
     ).to(self.device)
 
     self.optimizerDiscriminator = Adam(

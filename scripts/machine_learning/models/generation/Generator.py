@@ -17,24 +17,30 @@ class Generator(nn.Module):
 
   """
 
-  def __init__(self, inputSize: int, width: int, height: int):
+  def __init__(
+      self,
+      inputSize: int,
+      width: int,
+      height: int,
+      structure: list,
+    ):
     super().__init__()
+
+    layers = [
+        nn.Linear(inputSize, structure[0]),
+        nn.ReLU(),
+    ]
+    for i in range(len(structure) - 1):
+      layers.append(nn.Linear(structure[i], structure[i + 1]))
+      layers.append(nn.ReLU())
+
+    layers.append(nn.Linear(structure[-1], width * height))
+    layers.append(nn.Sigmoid())
+
     self.width = width
     self.height = height
     self.model = nn.Sequential(
-        nn.Linear(inputSize, 128),
-        nn.LeakyReLU(0.2, inplace=True),
-        nn.Linear(128, 256),
-        nn.BatchNorm1d(256),
-        nn.LeakyReLU(0.2, inplace=True),
-        nn.Linear(256, 512),
-        nn.BatchNorm1d(512),
-        nn.LeakyReLU(0.2, inplace=True),
-        nn.Linear(512, 1024),
-        nn.BatchNorm1d(1024),
-        nn.LeakyReLU(0.2, inplace=True),
-        nn.Linear(1024, width * height),
-        nn.Sigmoid()
+      *layers
     )
 
   def forward(self, x: Tensor) -> Tensor:
