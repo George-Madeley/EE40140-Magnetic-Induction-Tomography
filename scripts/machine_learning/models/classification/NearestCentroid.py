@@ -3,9 +3,9 @@ from sklearn.neighbors import NearestCentroid as NearestCentroidClassifier
 from pandas import DataFrame
 from typing import List, Literal
 
-from ..IModel import IModel
+from .IClassification import IClassification
 
-class NearestCentroid(IModel):
+class NearestCentroid(IClassification):
   def __init__(
     self,
     labelName: Literal['shape', 'sample'] = 'shape',

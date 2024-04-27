@@ -3,9 +3,9 @@ from typing import List, Literal, Union
 from sklearn.svm import SVC
 from pandas import DataFrame
 
-from ..IModel import IModel
+from .IClassification import IClassification
 
-class SupportVectorMachine(IModel):
+class SupportVectorMachine(IClassification):
   def __init__(
       self,
       labelName: Literal['shape', 'sample'] = 'shape',

@@ -2,9 +2,9 @@ from typing import Literal
 from pandas import DataFrame
 from sklearn.tree import DecisionTreeClassifier
 
-from ..IModel import IModel
+from .IClassification import IClassification
 
-class DecisionTree(IModel):
+class DecisionTree(IClassification):
   def __init__(
     self,
     labelName: Literal['shape', 'sample'] = 'shape',

@@ -9,8 +9,12 @@ class Encoder(nn.Module):
       nn.ReLU(True),
     )
 
-    self.mean = nn.Linear(512, latent_dim)
-    self.sigma = nn.Linear(512, latent_dim)
+    self.mean = nn.Sequential(
+      nn.Linear(512, latent_dim)
+    )
+    self.sigma = nn.Sequential(
+      nn.Linear(512, latent_dim)
+    )
 
     self.kl = 0
 
@@ -18,8 +22,9 @@ class Encoder(nn.Module):
   def forward(self, x):
     x = flatten(x, start_dim=1)
     x = self.model(x)
-    mu = self.mean(x)
-    sigma = exp(self.sigma(x))
-    z = mu + sigma * Normal(0, 1).sample(mu.shape)
+    mu = self.mean(x).to(x.device)
+    sigma = exp(self.sigma(x)).to(x.device)
+    normal = Normal(0, 1).sample(mu.shape).to(x.device)
+    z = mu + sigma * normal
     self.kl = (sigma ** 2 + mu ** 2 - log(sigma) - 1/2).sum(1)
     return z

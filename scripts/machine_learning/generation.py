@@ -18,16 +18,34 @@ def runModels():
   }
 
   models = [
-    NN(
+    # NN(
+    #   labelName='shape',
+    #   noise=True,
+    #   downScaleFactor=8,
+    #   structure=structureNN.get('NN1'),
+    #   name='NN1',
+    #   batchSize=16,
+    #   learningRate=0.001,
+    #   maxEpochs=100,
+    # ),
+    # GAN(
+    #   labelName='shape',
+    #   noise=True,
+    #   downScaleFactor=8,
+    #   name='GAN1',
+    #   batchSize=45,
+    #   learningRate=0.0001,
+    #   maxEpochs=100,
+    # )
+    VAE(
       labelName='shape',
       noise=True,
       downScaleFactor=8,
-      structure=structureNN.get('NN1'),
-      name='NN1',
-      batchSize=16,
-      learningRate=0.001,
+      name='VAE1',
+      batchSize=45,
+      learningRate=0.0001,
       maxEpochs=100,
-    ),
+    )
   ]
 
   for model in models:
@@ -35,6 +53,7 @@ def runModels():
     model.run(
         df_train,
         df_test,
+        df_val
     )
   
 

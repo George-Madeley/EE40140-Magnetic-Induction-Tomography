@@ -2,10 +2,10 @@ from typing import Literal
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier
 
-from ..IModel import IModel
+from .IClassification import IClassification
 
 
-class RandomForest(IModel):
+class RandomForest(IClassification):
   def __init__(
     self,
     labelName: Literal['shape', 'sample'] = 'shape',

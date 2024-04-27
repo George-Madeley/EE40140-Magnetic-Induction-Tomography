@@ -3,9 +3,9 @@ from typing import List, Literal, Union
 from sklearn.linear_model import SGDClassifier
 from pandas import DataFrame
 
-from ..IModel import IModel
+from .IClassification import IClassification
 
-class StochasticGradientDescent(IModel):
+class StochasticGradientDescent(IClassification):
   def __init__(
       self,
       labelName: Literal['shape', 'sample'] = 'shape',
