@@ -2,9 +2,8 @@ import os
 from typing import List, Literal
 
 
-from models import VariationalAutoencoder as VAE
-from models import GenerativeAdversarialNetwork as GAN
-from models import GenerationNeuralNetwork as NN
+from models import *
+
 import pandas as pd
 
 def runModels():
@@ -28,17 +27,30 @@ def runModels():
     #   learningRate=0.001,
     #   maxEpochs=100,
     # ),
-    GAN(
+    # GAN(
+    #   labelName='shape',
+    #   noise=True,
+    #   downScaleFactor=8,
+    #   name='GAN1',
+    #   batchSize=45,
+    #   learningRate=0.0001,
+    #   maxEpochs=100,
+    #   structure={
+    #     'discriminator': [15, 240],
+    #     'generator': [480, 960]
+    #   }
+    # )
+    UNet(
       labelName='shape',
       noise=True,
       downScaleFactor=8,
-      name='GAN1',
+      name='UNet1',
       batchSize=45,
       learningRate=0.0001,
       maxEpochs=100,
       structure={
-        'discriminator': [15, 240],
-        'generator': [480, 960]
+        'contractor': [64, 128, 256, 512],
+        'expandor': [512, 256, 128, 64]
       }
     )
   ]
