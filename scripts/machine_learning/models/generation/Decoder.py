@@ -1,15 +1,24 @@
 from torch import nn
 
 class Decoder(nn.Module):
-  def __init__(self, latent_dim, width, height):
+  def __init__(self, latent_dim, width, height, structure):
     super(Decoder, self).__init__()
+  
+    layers = [
+        nn.Linear(latent_dim, structure[0]),
+        nn.ReLU(),
+    ]
+    for i in range(len(structure) - 1):
+      layers.append(nn.Linear(structure[i], structure[i + 1]))
+      layers.append(nn.ReLU())
+
+    layers.append(nn.Linear(structure[-1], width * height))
+    layers.append(nn.Sigmoid())
+
     self.width = width
     self.height = height
     self.model = nn.Sequential(
-      nn.Linear(latent_dim, 512),
-      nn.ReLU(True),
-      nn.Linear(512, self.width * self.height),
-      nn.Sigmoid()
+      *layers
     )
 
   def forward(self, x):

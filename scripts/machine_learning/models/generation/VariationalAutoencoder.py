@@ -6,18 +6,23 @@ from .Decoder import Decoder
 from .IGeneration import IGeneration
 
 class VariationalAutoencoder(IGeneration):
-  def __init__(self, **kwargs):
+  def __init__(self, structure, **kwargs):
     super().__init__(**kwargs)
+
+    encoderStructure = structure.get('encoder')
+    decoderStructure = structure.get('decoder')
 
     latent_dim = 256
     self.encoder = Encoder(
       240 if self.noise else 120,
-      latent_dim
+      latent_dim,
+      encoderStructure
     ).to(self.device)
     self.decoder = Decoder(
       latent_dim,
       640 // self.downScaleFactor,
-      480 // self.downScaleFactor 
+      480 // self.downScaleFactor,
+      decoderStructure
     ).to(self.device)
 
     self.optimizerEncoder = torch.optim.Adam(

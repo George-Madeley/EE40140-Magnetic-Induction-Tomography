@@ -2,8 +2,22 @@ from torch import nn, flatten, exp, log
 from torch.distributions import Normal
 
 class Encoder(nn.Module):
-  def __init__(self, input_dim, latent_dim):
+  def __init__(self, input_dim, latent_dim, structure):
     super(Encoder, self).__init__()
+
+    
+    layers = [
+        nn.Linear(input_dim, structure[0]),
+        nn.ReLU(),
+    ]
+    for i in range(len(structure) - 1):
+      layers.append(nn.Linear(structure[i], structure[i + 1]))
+      layers.append(nn.ReLU())
+
+    layers.append(nn.Linear(structure[-1], latent_dim))
+    layers.append(nn.Sigmoid())
+
+
     self.model = nn.Sequential(
       nn.Linear(input_dim, 512),
       nn.ReLU(True),
