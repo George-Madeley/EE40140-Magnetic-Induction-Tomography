@@ -3,10 +3,10 @@ from torch.optim import Adam
 
 from .Contractor import Contractor
 from .Expandor import Expandor
-from .IGeneration import IGeneration
+from ..IGeneration import IGeneration
 
 
-class UNetwork(IGeneration):
+class UNeuralNetwork(IGeneration):
   def __init__(self, structure, **kwargs):
     super().__init__(**kwargs)
 

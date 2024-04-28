@@ -17,29 +17,29 @@ def runModels():
   }
 
   models = [
-    # NN(
-    #   labelName='shape',
-    #   noise=True,
-    #   downScaleFactor=8,
-    #   structure=structureNN.get('NN1'),
-    #   name='NN1',
-    #   batchSize=45,
-    #   learningRate=0.001,
-    #   maxEpochs=100,
-    # ),
-    GAN(
+    NN(
       labelName='shape',
       noise=True,
       downScaleFactor=8,
-      name='GAN1',
+      structure=structureNN.get('NN1'),
+      name='NN1',
       batchSize=45,
-      learningRate=0.0001,
+      learningRate=0.001,
       maxEpochs=100,
-      structure={
-        'discriminator': [15, 240],
-        'generator': [480, 960]
-      }
-    )
+    ),
+    # GAN(
+    #   labelName='shape',
+    #   noise=True,
+    #   downScaleFactor=8,
+    #   name='GAN1',
+    #   batchSize=45,
+    #   learningRate=0.0001,
+    #   maxEpochs=100,
+    #   structure={
+    #     'discriminator': [15, 240],
+    #     'generator': [480, 960]
+    #   }
+    # )
     # UNet(
     #   labelName='shape',
     #   noise=True,

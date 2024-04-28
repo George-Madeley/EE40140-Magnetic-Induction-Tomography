@@ -5,7 +5,7 @@ from pandas import DataFrame
 
 from .Discriminator import Discriminator
 from .Generator import Generator
-from .IGeneration import IGeneration
+from ..IGeneration import IGeneration
 
 
 class GenerativeAdversarialNetwork(IGeneration):

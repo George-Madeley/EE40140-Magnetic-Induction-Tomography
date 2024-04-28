@@ -1,0 +1,1 @@
+from .VariationalAutoencoder import VariationalAutoencoder as VAE

@@ -3,7 +3,7 @@ import torch
 
 from .Encoder import Encoder
 from .Decoder import Decoder
-from .IGeneration import IGeneration
+from ..IGeneration import IGeneration
 
 class VariationalAutoencoder(IGeneration):
   def __init__(self, structure, **kwargs):

@@ -3,7 +3,7 @@ from torch.optim import Adam
 from pandas import DataFrame
 
 from .ArtificialNeuralNetwork import ANN
-from .IGeneration import IGeneration
+from ..IGeneration import IGeneration
 
 class NeuralNetwork(IGeneration):
   def __init__(self, structure, **kwargs,):
