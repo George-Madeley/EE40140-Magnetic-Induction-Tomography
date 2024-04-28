@@ -2,7 +2,7 @@ import os
 from typing import List, Literal
 
 
-from models import *
+from models.generation import *
 
 import pandas as pd
 
@@ -23,36 +23,36 @@ def runModels():
     #   downScaleFactor=8,
     #   structure=structureNN.get('NN1'),
     #   name='NN1',
-    #   batchSize=16,
+    #   batchSize=45,
     #   learningRate=0.001,
     #   maxEpochs=100,
     # ),
-    # GAN(
-    #   labelName='shape',
-    #   noise=True,
-    #   downScaleFactor=8,
-    #   name='GAN1',
-    #   batchSize=45,
-    #   learningRate=0.0001,
-    #   maxEpochs=100,
-    #   structure={
-    #     'discriminator': [15, 240],
-    #     'generator': [480, 960]
-    #   }
-    # )
-    UNet(
+    GAN(
       labelName='shape',
       noise=True,
       downScaleFactor=8,
-      name='UNet1',
+      name='GAN1',
       batchSize=45,
       learningRate=0.0001,
       maxEpochs=100,
       structure={
-        'contractor': [64, 128, 256, 512],
-        'expandor': [512, 256, 128, 64]
+        'discriminator': [15, 240],
+        'generator': [480, 960]
       }
     )
+    # UNet(
+    #   labelName='shape',
+    #   noise=True,
+    #   downScaleFactor=8,
+    #   name='UNet1',
+    #   batchSize=45,
+    #   learningRate=0.0001,
+    #   maxEpochs=100,
+    #   structure={
+    #     'contractor': [64, 128, 256, 512],
+    #     'expandor': [512, 256, 128, 64]
+    #   }
+    # )
   ]
 
   for model in models:

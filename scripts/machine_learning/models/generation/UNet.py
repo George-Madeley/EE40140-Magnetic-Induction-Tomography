@@ -38,7 +38,10 @@ class UNetwork(IGeneration):
   def train(
     self,
     trainLoader,
+    metrics: list[str]
   ) -> None:
+    trainLoaderLen = len(trainLoader)
+
     for realImagesSamples, signalSamples in trainLoader:
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
@@ -54,12 +57,16 @@ class UNetwork(IGeneration):
       self.optimizerContractor.step()
       self.optimizerExpandor.step()
 
-    return loss
+      losses = super().score(metrics, realImagesSamples, generatedImageSamples)
+
+    losses = {f'UNET {k}': v / trainLoaderLen for k, v in losses.items()}
+
+    return loss, losses
 
   def test(
       self,
       testLoader,
-      losses: dict,
+      metrics: dict,
     ) -> float:
     """
     Test the generative adversarial network model on the given DataFrame and return the accuracy score.
@@ -79,7 +86,7 @@ class UNetwork(IGeneration):
       latentSamples = self.contractor(signalSamples)
       generatedImageSamples = self.expandor(latentSamples)
 
-      losses = super().score(losses, realImagesSamples, generatedImageSamples)
+      losses = super().score(metrics, realImagesSamples, generatedImageSamples)
     
     losses = {f'UNET {k}': v / testLoaderLen for k, v in losses.items()}
     return losses

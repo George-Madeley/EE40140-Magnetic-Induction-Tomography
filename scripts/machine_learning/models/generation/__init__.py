@@ -6,7 +6,7 @@ from .ArtificialNeuralNetwork import ANN
 from .Expandor import Expandor
 from .Contractor import Contractor
 
-from .VariationalAutoencoder import VariationalAutoencoder
-from .GenerativeAdversarialNetwork import GenerativeAdversarialNetwork
-from .NeuralNetwork import NeuralNetwork
-from .UNet import UNetwork
+from .VariationalAutoencoder import VariationalAutoencoder as VAE
+from .GenerativeAdversarialNetwork import GenerativeAdversarialNetwork as GAN
+from .NeuralNetwork import NeuralNetwork as NN
+from .UNet import UNetwork as UNN

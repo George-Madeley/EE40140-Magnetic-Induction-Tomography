@@ -28,7 +28,10 @@ class NeuralNetwork(IGeneration):
   def train(
     self,
     trainLoader,
+    metrics: list[str],
   ):
+    
+    trainLoaderLen = len(trainLoader)
     
     for realImageSamples, signalSamples in trainLoader:
       # Create and label the real samples, the generated samples, and the
@@ -42,17 +45,21 @@ class NeuralNetwork(IGeneration):
       # Generate the fake samples
       generatedImageSamples = self.network(signalSamples)
 
+      losses = super().score(metrics, realImageSamples, generatedImageSamples)
+
       # Calculate the loss
       loss = self.aLossFunc(generatedImageSamples, realImageSamples)
       loss.backward()
       self.optimizer.step()
 
-    return loss
+    losses = {f'ANN {k}': v / trainLoaderLen for k, v in losses.items()}
+
+    return loss, losses
   
   def test(
     self,
     testLoader,
-    losses: dict,
+    metrics: list[str],
   ):
     testLoaderLen = len(testLoader)
 
@@ -62,7 +69,7 @@ class NeuralNetwork(IGeneration):
 
       generatedImageSamples = self.network(signalSamples)
 
-      losses = super().score(losses, realImagesSamples, generatedImageSamples)
+      losses = super().score(metrics, realImagesSamples, generatedImageSamples)
     
     losses = {f'ANN {k}': v / testLoaderLen for k, v in losses.items()}
     return losses

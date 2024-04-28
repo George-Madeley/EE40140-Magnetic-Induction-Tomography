@@ -1,10 +1,8 @@
 import os
-from abc import ABC, abstractmethod
 from random import choice
 from string import ascii_letters
 from typing import Literal
 
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from matplotlib import pyplot as plt
 from pandas import DataFrame, concat
 from torch import nn
@@ -12,7 +10,6 @@ import numpy as np
 import torch
 
 from ..IModel import IModel
-
 
 class IGeneration(IModel):
   def __init__(
@@ -47,16 +44,15 @@ class IGeneration(IModel):
     df_test: DataFrame,
     df_val: DataFrame,
     fixedIndeces: list[int] = None,
-    scoring: list = None
+    metrics: list = None
   ) -> None:
       
-    if scoring is None:
-      scoring = [
+    if metrics is None:
+      metrics = [
         "BCE",
         "BCELogits",
-        "CE",
         "MSE",
-        "L1"
+        "MAE"
       ]
 
     # Create a unique ID for the results file and create the results file
@@ -70,7 +66,8 @@ class IGeneration(IModel):
       'Batch Size': [],
       'Noise': [],
       'Epoch': [],
-      **{f'{modelName} {k} Loss': [] for k in scoring for modelName in self.modelNames},
+      **{f'train {modelName} {k} Loss': [] for k in metrics for modelName in self.modelNames},
+      **{f'test {modelName} {k} Loss': [] for k in metrics for modelName in self.modelNames},
     })
 
     # Get the values and labels
@@ -89,9 +86,8 @@ class IGeneration(IModel):
 
     for epoch in range(self.maxEpoch):
 
-      losses = {k: 0 for k in scoring}
-      loss = self.train(trainLoader)
-      losses = self.test(testLoader, losses)
+      loss, trainLosses = self.train(trainLoader, metrics)
+      testLosses = self.test(testLoader, metrics)
 
       print(f'Epoch: {epoch} Loss: {loss}')
       if epoch == 0:
@@ -106,12 +102,13 @@ class IGeneration(IModel):
         'Batch Size': self.batchSize,
         'Noise': self.noise,
         'Epoch': epoch,
-        **{f'{k} Loss': v for k, v in losses.items()},
+        **{f'train {k} Loss': v for k, v in trainLosses.items()},
+        **{f'test {k} Loss': v for k, v in testLosses.items()},
       }, index=[0])
       df_results = concat([df_results, df_newRow], axis=0)
       df_results.to_csv(resultsPath, index=False)
 
-  def score(self, scoring: dict, actual, predicted):
+  def score(self, scoring: list, actual, predicted):
     """
     Calculate the scores for different loss functions and update the scoring dictionary.
 
@@ -123,17 +120,19 @@ class IGeneration(IModel):
     Returns:
       dict: The updated scoring dictionary.
     """
-    newScoring = {k: 0 for k in scoring.keys()}
+    newScoring = {k: 0 for k in scoring}
+
     BCE = nn.functional.binary_cross_entropy(predicted, actual).item()
-    if 'BCE' in scoring.keys(): newScoring['BCE'] += BCE
+    if 'BCE' in scoring: newScoring['BCE'] += BCE
+
     BCELogits = nn.functional.binary_cross_entropy_with_logits(predicted, actual).item()
-    if 'BCELogits' in scoring.keys(): newScoring['BCELogits'] += BCELogits
-    CE = nn.functional.cross_entropy(predicted, actual).item()
-    if 'CE' in scoring.keys(): newScoring['CE'] += CE
+    if 'BCELogits' in scoring: newScoring['BCELogits'] += BCELogits
+
     MSELoss = nn.functional.mse_loss(predicted, actual).item()
-    if 'MSE' in scoring.keys(): newScoring['MSE'] += MSELoss
-    L1Loss = nn.functional.l1_loss(predicted, actual).item()
-    if 'L1' in scoring.keys(): newScoring['L1'] += L1Loss
+    if 'MSE' in scoring: newScoring['MSE'] += MSELoss
+
+    MAELoss = nn.functional.l1_loss(predicted, actual).item()
+    if 'MAE' in scoring: newScoring['MAE'] += MAELoss
 
     return newScoring
   

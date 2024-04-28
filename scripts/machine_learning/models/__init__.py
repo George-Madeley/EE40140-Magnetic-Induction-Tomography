@@ -10,7 +10,7 @@ from .classification import SupportVectorMachine
 
 
 
-from .generation import GenerativeAdversarialNetwork as GAN
-from .generation import VariationalAutoencoder as VAE
-from .generation import NeuralNetwork as GenerationNeuralNetwork
-from .generation import UNetwork as UNet
+from .generation import GAN
+from .generation import VAE
+from .generation import NN as GNN
+from .generation import UNN

@@ -51,6 +51,7 @@ class GenerativeAdversarialNetwork(IGeneration):
   def train(
     self,
     trainLoader,
+    metrics: list[str]
   ) -> None:
     """
     Train the generative adversarial network model using the provided DataFrame.
@@ -61,6 +62,8 @@ class GenerativeAdversarialNetwork(IGeneration):
     Returns:
         None
     """
+
+    trainLoaderLen = len(trainLoader)
     
     for realImageSamples, signalSamples in trainLoader:
       # Create and label the real samples, the generated samples, and the
@@ -91,12 +94,28 @@ class GenerativeAdversarialNetwork(IGeneration):
       lossGenerator.backward()
       self.optimizerGenerator.step()
 
-    return lossDiscriminator, lossGenerator
+      discriminatorLosses = super().score(metrics, allImageSampleLabels, outputDiscriminator)
+      generatorLosses = super().score(metrics, realImageSamples, generatedSamples)
+
+    discriminatorLosses = {f'D {k}': v / trainLoaderLen for k, v in discriminatorLosses.items()}
+    generatorLosses = {f'G {k}': v / trainLoaderLen for k, v in generatorLosses.items()}
+
+    loss = {
+      'D Loss': lossDiscriminator.item(),
+      'G Loss': lossGenerator.item()
+    }
+
+    losses = {
+      **discriminatorLosses,
+      **generatorLosses
+    }
+
+    return loss, losses
 
   def test(
       self,
       testLoader,
-      losses: dict,
+      metrics: list[str],
     ) -> float:
     """
     Test the generative adversarial network model on the given DataFrame and return the accuracy score.
@@ -123,12 +142,12 @@ class GenerativeAdversarialNetwork(IGeneration):
       # Test the discriminator
       self.discriminator.zero_grad()
       outputDiscriminator = self.discriminator(allSamples)
-      discriminatorLosses = super().score(losses, allSampleLabels, outputDiscriminator)
+      discriminatorLosses = super().score(metrics, allSampleLabels, outputDiscriminator)
 
       # Test the generator
       self.generator.zero_grad()
       generatedSamples = self.generator(latentSpaceSamples)
-      generatorLosses = super().score(losses, realSamples, generatedSamples)
+      generatorLosses = super().score(metrics, realSamples, generatedSamples)
 
     discriminatorLosses = {f'D {k}': v / testLoaderLen for k, v in discriminatorLosses.items()}
     generatorLosses = {f'G {k}': v / testLoaderLen for k, v in generatorLosses.items()}
