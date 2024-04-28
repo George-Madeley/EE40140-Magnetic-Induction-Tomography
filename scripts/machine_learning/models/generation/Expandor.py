@@ -31,12 +31,10 @@ class Expandor(nn.Module):
         nn.ReLU(),
         nn.Conv2d(structure[-1], structure[-1], kernel_size=3, padding=1),
         nn.ReLU(),
-        nn.Conv2d(structure[-1], 1, kernel_size=3, padding=1),
-        nn.ReLU(),
         nn.Flatten(),
-        nn.Linear(256, 1024),
+        nn.Linear(16384, 8192),
         nn.ReLU(),
-        nn.Linear(1024, 4800),
+        nn.Linear(8192, 4800),
         nn.Sigmoid()
       )
     ]
@@ -44,12 +42,12 @@ class Expandor(nn.Module):
     self.model = nn.ModuleList(self.model)
 
 
-  def forward(self, inputTensors):
-    inputTensor = inputTensors.pop()
-    outputTensor = self.model[0](inputTensor)
+  def forward(self, skipTesnors):
+    skipTensor = skipTesnors.pop()
+    outputTensor = self.model[0](skipTensor)
     for layer in self.model[1:]:
-      inputTensor = inputTensors.pop()
-      concatTensor = cat((outputTensor, inputTensor), 1)
+      skipTensor = skipTesnors.pop()
+      concatTensor = cat((outputTensor, skipTensor), 1)
       outputTensor = layer(concatTensor)
 
     outputTensor = outputTensor.view(outputTensor.size(0), 1, self.height, self.width)
