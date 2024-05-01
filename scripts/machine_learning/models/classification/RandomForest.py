@@ -10,7 +10,8 @@ class RandomForest(IClassification):
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
     noise: bool = False,
-    oneHotEncode: bool = False
+    oneHotEncode: bool = False,
+    params: dict = {}
   ):
     """
     Initializes a RandomForest object.
@@ -27,7 +28,7 @@ class RandomForest(IClassification):
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
-    self.model = RandomForestClassifier()
+    self.model = RandomForestClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
@@ -39,9 +40,9 @@ class RandomForest(IClassification):
     Returns:
       None
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
-    self.randomForest.fit(values, labels)
+    self.model.fit(values, labels)
 
   def test(self, df: DataFrame) -> float:
     """
@@ -53,9 +54,9 @@ class RandomForest(IClassification):
     Returns:
       float: The score of the random forest model on the test data.
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
-    score = self.randomForest.score(values, labels)
+    score = self.model.score(values, labels)
 
     return score
   
@@ -69,9 +70,10 @@ class RandomForest(IClassification):
     Returns:
       list: The predicted labels for the input DataFrame.
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
-    return self.randomForest.predict(values)
+    predictions = self.model.predict(values)
+    return predictions, labels
   
   def getDefaultParams(self) -> dict:
     """

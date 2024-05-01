@@ -9,7 +9,8 @@ class DecisionTree(IClassification):
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
     noise: bool = False,
-    oneHotEncode: bool = False
+    oneHotEncode: bool = False,
+    params: dict = {}
   ):
     """
     Initialize a DecisionTree object.
@@ -26,7 +27,7 @@ class DecisionTree(IClassification):
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
-    self.model = DecisionTreeClassifier()
+    self.model = DecisionTreeClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
@@ -38,7 +39,7 @@ class DecisionTree(IClassification):
     Returns:
       None
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     self.model.fit(values, labels)
 
@@ -52,7 +53,7 @@ class DecisionTree(IClassification):
     Returns:
     - float: The accuracy score of the decision tree model on the test data.
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     score = self.model.score(values, labels)
 
@@ -68,9 +69,9 @@ class DecisionTree(IClassification):
     Returns:
       list: The predicted labels for the input DataFrame.
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
-    return self.model.predict(values)
+    return self.model.predict(values), labels
   
   def getDefaultParams(self) -> dict:
     """

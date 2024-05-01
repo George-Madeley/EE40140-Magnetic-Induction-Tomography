@@ -9,7 +9,8 @@ class KNearestNeighbors(IClassification):
       self,
       labelName: Literal['shape', 'sample'] = 'shape',
       noise: bool = False,
-      oneHotEncode: bool = False
+      oneHotEncode: bool = False,
+      params: dict = {}
     ):
     """
     Initializes a KNearestNeighbors object.
@@ -26,7 +27,7 @@ class KNearestNeighbors(IClassification):
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
-    self.model = KNeighborsClassifier()
+    self.model = KNeighborsClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
@@ -35,7 +36,7 @@ class KNearestNeighbors(IClassification):
     :param train_df: training dataframe
     :param noise: whether to include background noise
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName. self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     self.model.fit(values, labels)
 
@@ -48,7 +49,7 @@ class KNearestNeighbors(IClassification):
 
     :return: score
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName. self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     score = self.model.score(values, labels)
 
@@ -63,9 +64,9 @@ class KNearestNeighbors(IClassification):
 
     :return: predictions
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName. self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
-    predictions = self.model.predict_proba(values)
+    predictions = self.model.predict(values)
 
     return predictions, labels
 

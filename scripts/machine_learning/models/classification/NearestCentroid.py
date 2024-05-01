@@ -10,7 +10,8 @@ class NearestCentroid(IClassification):
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
     noise: bool = False,
-    oneHotEncode: bool = False
+    oneHotEncode: bool = False,
+    params: dict = {}
   ):
     """
     Initialize the NearestCentroid model.
@@ -25,7 +26,7 @@ class NearestCentroid(IClassification):
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
-    self.model = NearestCentroidClassifier()
+    self.model = NearestCentroidClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
@@ -37,7 +38,7 @@ class NearestCentroid(IClassification):
     Returns:
       None
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     self.model.fit(values, labels)
 
@@ -51,7 +52,7 @@ class NearestCentroid(IClassification):
     Returns:
       float: The score of the model on the test data.
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     score = self.model.score(values, labels)
 
@@ -67,11 +68,11 @@ class NearestCentroid(IClassification):
     Returns:
       List: The predicted labels for the input DataFrame.
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     predictions = self.model.predict(values)
 
-    return predictions
+    return predictions, labels
   
   def getDefaultParams(self) -> dict:
     """

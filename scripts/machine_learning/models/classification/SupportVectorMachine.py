@@ -10,7 +10,8 @@ class SupportVectorMachine(IClassification):
       self,
       labelName: Literal['shape', 'sample'] = 'shape',
       noise: bool = False,
-      oneHotEncode: bool = False
+      oneHotEncode: bool = False,
+      params: dict = {}
     ):
     """
     Initializes a SupportVectorMachine object.
@@ -27,7 +28,7 @@ class SupportVectorMachine(IClassification):
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
-    self.model = SVC()
+    self.model = SVC(**params)
   
   def train(self, df: DataFrame) -> None:
     """
@@ -36,7 +37,7 @@ class SupportVectorMachine(IClassification):
     :param train_df: training dataframe
     :param noise: whether to include background noise
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     self.model.fit(values, labels)
 
@@ -49,7 +50,7 @@ class SupportVectorMachine(IClassification):
 
     :return: score
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     score = self.model.score(values, labels)
 
@@ -62,9 +63,10 @@ class SupportVectorMachine(IClassification):
     :param test_df: test dataframe
     :param noise: whether to include background noise
     """
-    values, _ = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
+    predictions = self.model.predict(values)
 
-    return self.model.predict(values)
+    return predictions, labels
   
   def getDefaultParams(self):
     """

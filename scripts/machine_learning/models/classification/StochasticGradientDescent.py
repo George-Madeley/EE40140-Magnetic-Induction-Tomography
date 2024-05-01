@@ -10,7 +10,8 @@ class StochasticGradientDescent(IClassification):
       self,
       labelName: Literal['shape', 'sample'] = 'shape',
       noise: bool = False,
-      oneHotEncode: bool = False
+      oneHotEncode: bool = False,
+      params: dict = {}
     ):
     """
     Initializes a StochasticGradientDescent object.
@@ -27,7 +28,7 @@ class StochasticGradientDescent(IClassification):
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
-    self.model = SGDClassifier()
+    self.model = SGDClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
@@ -36,7 +37,7 @@ class StochasticGradientDescent(IClassification):
     :param train_df: training dataframe
     :param noise: whether to include background noise
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     self.model.fit(values, labels)
 
@@ -49,7 +50,7 @@ class StochasticGradientDescent(IClassification):
 
     :return: score
     """
-    values, labels = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
     score = self.model.score(values, labels)
 
@@ -63,21 +64,10 @@ class StochasticGradientDescent(IClassification):
 
     :return: the predicted labels
     """
-    values, _ = super().getValuesAndLabels(df, self.labelName, self.noise)
+    values, labels = super().getValuesAndLabels(df)
 
-    return self.model.predict(values)
-  
-  def predictProba(self, df: DataFrame) -> List[List[float]]:
-    """
-    Predict the probabilities of the given data
-
-    :param df: the data to predict
-
-    :return: the predicted probabilities
-    """
-    values, _ = super().getValuesAndLabels(df, self.labelName, self.noise)
-
-    return self.model.predict_proba(values)
+    predictions = self.model.predict(values)
+    return predictions, labels
   
   def getDefaultParams(self) -> dict:
     """
