@@ -10,49 +10,111 @@ def runModels():
   """
   Run the generation models
   """
-  df_train, df_test, df_val = getData()
+
+  material = 'iron'
+  labelName = 'shape'
+  batchSize = 45
+
+  if material == 'iron':
+    fixedIndices = [1342, 1234, 1239, 944, 609, 417, 1235, 120]
+  elif material == 'copper':
+    fixedIndices = [1342, 3457, 1238, 610, 123, 1236, 948, 419]
+  else:
+    raise ValueError(f"Material {material} not found")
+
+  df_train, df_test, df_val = getData(material)
+
+  commonFactors = getCommonFactors(df_train.shape[0], df_test.shape[0])
+
+  if batchSize not in commonFactors:
+    raise ValueError(f"Common factor {batchSize} not found in {commonFactors}")
 
   structureNN = {
-    'NN1': [480]
+    'NN1': [480],
+    'NN2': [960],
+    'NN3': [1200],
+    'NN4': [2400],
+    'NN5': [480, 960],
+    'NN6': [480, 2400],
+    'NN7': [1200,2400],
+    'GAN1': {
+      'discriminator': [64],
+      'generator': [480]
+    },
+    'GAN2': {
+      'discriminator': [64],
+      'generator': [960]
+    },
+    'GAN3': {
+      'discriminator': [15, 240],
+      'generator': [1200]
+    },
+    'GAN4': {
+      'discriminator': [15, 240],
+      'generator': [2400]
+    },
+    'GAN5': {
+      'discriminator': [20, 320],
+      'generator': [480, 960]
+    },
+    'GAN6': {
+      'discriminator': [20, 320],
+      'generator': [480, 2400]
+    },
+    'GAN7': {
+      'discriminator': [20, 400],
+      'generator': [1200, 2400]
+    },
+    'VAE1': {
+      'encoder': [48, 12, 4],
+      'decoder': [10, 60, 480]
+    },
+    'VAE2': {
+      'encoder': [48, 12, 4],
+      'decoder': [20, 160, 960]
+    },
+    'VAE3': {
+      'encoder': [120, 40, 10],
+      'decoder': [10, 60, 480]
+    },
+    'VAE4': {
+      'encoder': [120, 40, 10],
+      'decoder': [20, 160, 960]
+    },
+    'VAE5': {
+      'encoder': [40, 8, 4],
+      'decoder': [8, 48, 480]
+    },
+    'VAE6': {
+      'encoder': [40, 8, 4],
+      'decoder': [12, 60, 480]
+    },
+    'UNN1': {
+      'contractor': [64, 128, 256, 512],
+      'bottleneck': [32, 352, 3872],
+      'expandor': [
+        [3872, 1936],
+        [1952, 976, 488],
+        [496, 248, 124],
+        [128, 64]
+      ]
+    },
+    'ResNet': []
   }
 
+
+
   models = [
-    NN(
-      labelName='shape',
+    ResNet(
+      labelName=labelName,
       noise=True,
-      downScaleFactor=8,
-      structure=structureNN.get('NN1'),
-      name='NN1',
-      batchSize=45,
-      learningRate=0.001,
-      maxEpochs=100,
+      downScaleFactor=10,
+      structure=structureNN.get('ResNet'),
+      name='ResNet1',
+      batchSize=batchSize,
+      learningRate=0.0001,
+      maxEpoch=1000,
     ),
-    # GAN(
-    #   labelName='shape',
-    #   noise=True,
-    #   downScaleFactor=8,
-    #   name='GAN1',
-    #   batchSize=45,
-    #   learningRate=0.0001,
-    #   maxEpochs=100,
-    #   structure={
-    #     'discriminator': [15, 240],
-    #     'generator': [480, 960]
-    #   }
-    # )
-    # UNet(
-    #   labelName='shape',
-    #   noise=True,
-    #   downScaleFactor=8,
-    #   name='UNet1',
-    #   batchSize=45,
-    #   learningRate=0.0001,
-    #   maxEpochs=100,
-    #   structure={
-    #     'contractor': [64, 128, 256, 512],
-    #     'expandor': [512, 256, 128, 64]
-    #   }
-    # )
   ]
 
   for model in models:
@@ -60,7 +122,8 @@ def runModels():
     model.run(
         df_train,
         df_test,
-        df_val
+        df_val,
+        fixedIndeces=fixedIndices
     )
   
 
