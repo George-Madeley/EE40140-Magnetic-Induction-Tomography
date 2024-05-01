@@ -14,3 +14,4 @@ from .generation import GAN
 from .generation import VAE
 from .generation import NN as GNN
 from .generation import UNN
+from .generation import ResNet
