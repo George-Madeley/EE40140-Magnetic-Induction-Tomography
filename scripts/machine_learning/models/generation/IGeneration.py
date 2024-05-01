@@ -75,9 +75,11 @@ class IGeneration(IModel):
     testLoader = self.getLoader(df_test)
     validLoader = self.getLoader(df_val)
 
+
     # Get the fixed real images
     if fixedIndeces is None:
       fixedIndeces = [1342, 1239, 119, 1234, 1235, 607, 414, 941]
+    
     fixedRealImages = validLoader.dataset.tensors[0][fixedIndeces]
 
     imgDir = os.path.join('images', 'generated', self.__class__.__name__, self.name, uniqueID)

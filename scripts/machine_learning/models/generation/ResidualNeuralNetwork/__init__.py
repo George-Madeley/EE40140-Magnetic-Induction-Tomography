@@ -1,0 +1,1 @@
+from .ResidualNeuralNetwork import ResidualNeuralNetwork as ResNet
