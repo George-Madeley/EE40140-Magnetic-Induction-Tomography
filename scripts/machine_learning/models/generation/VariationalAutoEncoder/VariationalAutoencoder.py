@@ -43,7 +43,8 @@ class VariationalAutoencoder(IGeneration):
   ) -> None:
     trainLoaderLen = len(trainLoader)
 
-    for realImagesSamples, signalSamples, signalLabels in trainLoader:
+    for batch in trainLoader:
+      realImagesSamples, signalSamples, signalLabels, _ = batch
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
@@ -72,7 +73,8 @@ class VariationalAutoencoder(IGeneration):
   ):
     testLoaderLen = len(testLoader)
 
-    for realImagesSamples, signalSamples, signalLabels in testLoader:
+    for batch in testLoader:
+      realImagesSamples, signalSamples, signalLabels, _ = batch
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
@@ -84,8 +86,8 @@ class VariationalAutoencoder(IGeneration):
     losses = {f'VAE {k}': v / testLoaderLen for k, v in losses.items()}
     return losses
   
-  def predict(self, fixedSignalSamples, imgDir, epoch) -> None:
-    fixedLatentSamples = self.encoder(fixedSignalSamples)
-    fixedGeneratedImages = self.decoder(fixedLatentSamples)
-    fixedGeneratedImages = fixedGeneratedImages.detach().cpu()
-    self.plotImages(imgDir, fixedGeneratedImages, f'epoch_{str(epoch).zfill(3)}.png', subtitle=f'Epoch {epoch}')
+  def predict(self, signalSamples) -> None:
+    latentSamples = self.encoder(signalSamples)
+    generatedImages = self.decoder(latentSamples)
+    generatedImages = generatedImages.detach().cpu()
+    return generatedImages

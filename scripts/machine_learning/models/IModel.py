@@ -62,3 +62,17 @@ class IModel(ABC):
       labels = df[self.labelName].values
 
     return values, labels
+  
+  def getIndices(
+    self,
+    df: DataFrame,
+  ):
+    """
+    Get the indices from the dataframe
+
+    :param df: dataframe
+
+    :return: indices
+    """
+
+    return df.index.values

@@ -33,7 +33,8 @@ class NeuralNetwork(IGeneration):
     
     trainLoaderLen = len(trainLoader)
     
-    for realImageSamples, signalSamples, signalLabels in trainLoader:
+    for batch in trainLoader:
+      realImageSamples, signalSamples, signalLabels, _ = batch
       # Create and label the real samples, the generated samples, and the
       # latent space samples. Send them to the chosen device i.e., CPU or GPU.
       realImageSamples = realImageSamples.to(device=self.device)
@@ -63,7 +64,8 @@ class NeuralNetwork(IGeneration):
   ):
     testLoaderLen = len(testLoader)
 
-    for realImagesSamples, signalSamples, signalLabels in testLoader:
+    for batch in testLoader:
+      realImagesSamples, signalSamples, signalLabels, _ = batch
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
@@ -74,12 +76,7 @@ class NeuralNetwork(IGeneration):
     losses = {f'ANN {k}': v / testLoaderLen for k, v in losses.items()}
     return losses
   
-  def predict(self, fixedSignalSamples, imgDir, epoch) -> None:
-    fixedGeneratedImages = self.network(fixedSignalSamples)
-    fixedGeneratedImages = fixedGeneratedImages.detach().cpu()
-    self.plotImages(
-      imgDir,
-      fixedGeneratedImages,
-      f'epoch_{str(epoch).zfill(3)}.png',
-      subtitle=f'Epoch {epoch}'
-    )
+  def predict(self, signalSample) -> None:
+    generatedImage = self.network(signalSample)
+    generatedImage = generatedImage.detach().cpu()
+    return generatedImage

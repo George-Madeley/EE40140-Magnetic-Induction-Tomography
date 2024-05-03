@@ -8,6 +8,7 @@ from pandas import DataFrame, concat
 from torch import nn
 import numpy as np
 import torch
+from skimage.metrics import structural_similarity as ssim
 
 from ..IModel import IModel
 
@@ -103,7 +104,13 @@ class IGeneration(IModel):
       print(f'Epoch: {epoch} Loss: {loss}')
       if epoch == 0:
         fixedSignalSamples = validLoader.dataset.tensors[1][fixedIndeces].to(self.device)
-      self.predict(fixedSignalSamples, imgDir, epoch)
+      fixedGeneratedImages = self.predict(fixedSignalSamples)
+      self.plotImages(
+        imgDir,
+        fixedGeneratedImages,
+        f'epoch_{str(epoch).zfill(3)}.png',
+        subtitle=f'Epoch {epoch}'
+      )
       
 
       df_newRow = DataFrame({
@@ -119,7 +126,43 @@ class IGeneration(IModel):
       df_results = concat([df_results, df_newRow], axis=0)
       df_results.to_csv(resultsPath, index=False)
 
-  def score(self, scoring: list, actual, predicted, labels, runPerPixelLoss: bool = True):
+    df_val_results = DataFrame()
+
+    for batch in validLoader:
+      realImagesSamples, signalSamples, signalLabels, signalIndices = batch
+      signalSamples = signalSamples.to(self.device)
+      realImagesSamples = realImagesSamples.to(self.device)
+
+      generatedImageSamples = self.predict(signalSamples)
+
+      losses = self.singleScore(metrics, realImagesSamples, generatedImageSamples, signalLabels)
+
+      
+      labelIndex = torch.argmax(signalLabels, dim=1)
+      actualLabels = [self.labelNames[i] for i in labelIndex]
+      losses['Label'] = actualLabels
+      losses['Index'] = signalIndices
+
+      df_batch = DataFrame(losses)
+      df_val_results = concat([df_val_results, df_batch], axis=0)
+
+    # reorder the columns so that the label and index columns are at the beginning
+    columns = df_val_results.columns.tolist()
+    columns = columns[-2:] + columns[:-2]
+    df_val_results = df_val_results[columns]
+    save_dir = os.path.join('results', 'generation', 'per image')
+    os.makedirs(save_dir, exist_ok=True)
+    df_val_results.to_csv(os.path.join(save_dir, f'{self.name} - {uniqueID}.csv'), index=False)
+
+  def score(
+      self,
+      scoring: list,
+      actual,
+      predicted,
+      labels,
+      runPerPixelLoss: bool = True,
+      dim: tuple = (1, 2, 3)
+    ):
     """
     Calculate the scores for different loss functions and update the scoring dictionary.
 
@@ -147,37 +190,48 @@ class IGeneration(IModel):
       # and predicted values for the pixels that are 0.99 (1 in the rounded
       # roundActual tensor)
 
-      numWhitePixels = torch.sum(roundActual, dim=(1, 2, 3))
+      numWhitePixels = torch.sum(roundActual, dim=dim)
       whiteAE = absDiff * roundActual
-      sumWhiteAE = torch.sum(whiteAE, dim=(1, 2, 3))
+      sumWhiteAE = torch.sum(whiteAE, dim=dim)
       whiteMAE = sumWhiteAE / numWhitePixels
       whiteMAE = whiteMAE.detach().cpu().numpy()
 
       # Black MAE loss is the mean of the absolute difference between the actual
       # and predicted values for the pixels that are 0.01 (0 in the rounded
       # roundActual tensor)
-      numBlackPixels = torch.sum(1 - roundActual, dim=(1, 2, 3))
+      numBlackPixels = torch.sum(1 - roundActual, dim=dim)
       blackAE = absDiff * (1 - roundActual)
-      sumBlackAE = torch.sum(blackAE, dim=(1, 2, 3))
+      sumBlackAE = torch.sum(blackAE, dim=dim)
       blackMAE = sumBlackAE / numBlackPixels
       blackMAE = blackMAE.detach().cpu().numpy()
 
       # the labels are one-hot encoded. Get the index of the label that is 1
-      labelIndex = torch.argmax(labels, dim=1)
+      labelIndex = torch.argmax(labels, dim=dim[0])
       
       # self.labelNames in a list of the label names. labelIndex is a tensor
       # containing the indexes of the labels in self.labelNames that correspond
       # to the actual image. Get the label names for the actual images
-      actualLabels = [self.labelNames[i] for i in labelIndex]
+      if labelIndex.dim() == 0:
+        labelIndex = labelIndex.item()
+        actualLabels = self.labelNames[labelIndex]
+      else:
+        actualLabels = [self.labelNames[i] for i in labelIndex]
       actualLabels = np.array(actualLabels)
 
       # Create a dataframe with one column for the actual labels, one column for
       # the white MAE loss, and one column for the black MAE loss.
-      df = DataFrame({
-        'Actual Labels': actualLabels,
-        'White MAE': whiteMAE,
-        'Black MAE': blackMAE
-      })
+      if whiteMAE.shape == () and blackMAE.shape == () and actualLabels.shape == ():
+        df = DataFrame({
+          'Actual Labels': actualLabels,
+          'White MAE': whiteMAE,
+          'Black MAE': blackMAE
+        }, index=[0])
+      else:
+        df = DataFrame({
+          'Actual Labels': actualLabels,
+          'White MAE': whiteMAE,
+          'Black MAE': blackMAE
+        })
 
       # Group the dataframe by the actual labels and calculate the mean of the
       # white MAE and black MAE losses for each label
@@ -194,9 +248,6 @@ class IGeneration(IModel):
         newScoring[f'{label} White MAE'] += whiteMAE
         newScoring[f'{label} Black MAE'] += blackMAE
 
-
-
-      
     
     BCE = nn.functional.binary_cross_entropy(predicted, actual).item()
     if 'BCE' in scoring: newScoring['BCE'] += BCE
@@ -209,6 +260,40 @@ class IGeneration(IModel):
 
     MAELoss = nn.functional.l1_loss(predicted, actual).item()
     if 'MAE' in scoring: newScoring['MAE'] += MAELoss
+
+    # # Calculate the SSIM score
+    # actual = actual.detach().cpu().numpy()
+    # predicted = predicted.detach().cpu().numpy()
+    # ssimScore = ssim(actual, predicted, data_range=1)
+    # if 'SSIM' in scoring: newScoring['SSIM'] += ssimScore
+
+    return newScoring
+  
+  def singleScore(self, scoring: list, actual, predicted, labels, runPerPixelLoss: bool = True):
+    """
+    Calculate the scores for different loss functions and update the scoring dictionary.
+
+    Args:
+      scoring (dict): A dictionary containing the scores for different loss functions.
+      actual: The actual values.
+      predicted: The predicted values.
+
+    Returns:
+      dict: The updated scoring dictionary.
+    """
+    newScoring = {k: [] for k in scoring}
+
+    for i in range(len(actual)):
+      singleScoring = self.score(
+        scoring,
+        actual[i],
+        predicted[i],
+        labels[i],
+        runPerPixelLoss,
+        dim=(0, 1, 2)
+      )
+      for k, v in singleScoring.items():
+        newScoring[k].append(v)
 
     return newScoring
   
@@ -323,16 +408,18 @@ class IGeneration(IModel):
     Get the data loader
     """
     values, labels = self.getValuesAndLabels(df)
+    indicies = self.getIndices(df)
     images = self.getImages(df, self.downScaleFactor)
 
     values = torch.from_numpy(values).float()
+    indicies = torch.from_numpy(indicies).int()
 
     if not self.oneHotEncode and self.perPixelLoss:
       raise ValueError("oneHotEncode must be True")
     else:
       labels = torch.from_numpy(labels).int()
 
-    dataSet = torch.utils.data.TensorDataset(images, values, labels)
+    dataSet = torch.utils.data.TensorDataset(images, values, labels, indicies)
 
     dataLoader = torch.utils.data.DataLoader(
         dataSet, batch_size=self.batchSize, shuffle=False

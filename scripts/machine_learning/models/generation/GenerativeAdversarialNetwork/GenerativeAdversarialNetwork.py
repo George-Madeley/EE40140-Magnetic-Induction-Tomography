@@ -65,7 +65,8 @@ class GenerativeAdversarialNetwork(IGeneration):
 
     trainLoaderLen = len(trainLoader)
     
-    for realImageSamples, signalSamples, signalLabels in trainLoader:
+    for batch in trainLoader:
+      realImageSamples, signalSamples, signalLabels, _ = batch
       # Create and label the real samples, the generated samples, and the
       # latent space samples. Send them to the chosen device i.e., CPU or GPU.
       realImageSamples = realImageSamples.to(device=self.device)
@@ -128,15 +129,16 @@ class GenerativeAdversarialNetwork(IGeneration):
     """
     testLoaderLen = len(testLoader)
 
-    for realSamples, latentSpaceSamples, signalLabels in testLoader:
+    for batch in testLoader:
+      realImageSamples, signalSamples, signalLabels, _ = batch
       # Create and label the real samples, the generated samples, and the
       # latent space samples. Send them to the chosen device i.e., CPU or GPU.
-      realSamples = realSamples.to(device=self.device)
+      realImageSamples = realImageSamples.to(device=self.device)
       realSampleLabels = torch.ones((self.batchSize, 1)).to(device=self.device)
-      latentSpaceSamples = latentSpaceSamples.to(device=self.device)
-      generatedSamples = self.generator(latentSpaceSamples)
+      signalSamples = signalSamples.to(device=self.device)
+      generatedSamples = self.generator(signalSamples)
       generatedSampleLabels = torch.zeros((self.batchSize, 1)).to(device=self.device)
-      allSamples = torch.cat((realSamples, generatedSamples))
+      allSamples = torch.cat((realImageSamples, generatedSamples))
       allSampleLabels = torch.cat((realSampleLabels, generatedSampleLabels))
 
       # Test the discriminator
@@ -146,8 +148,8 @@ class GenerativeAdversarialNetwork(IGeneration):
 
       # Test the generator
       self.generator.zero_grad()
-      generatedSamples = self.generator(latentSpaceSamples)
-      generatorLosses = super().score(metrics, realSamples, generatedSamples, signalLabels)
+      generatedSamples = self.generator(signalSamples)
+      generatorLosses = super().score(metrics, realImageSamples, generatedSamples, signalLabels)
 
     discriminatorLosses = {f'D {k}': v / testLoaderLen for k, v in discriminatorLosses.items()}
     generatorLosses = {f'G {k}': v / testLoaderLen for k, v in generatorLosses.items()}
@@ -159,7 +161,7 @@ class GenerativeAdversarialNetwork(IGeneration):
 
     return losses
 
-  def predict(self, fixedSignalSamples, imgDir, epoch) -> None:
+  def predict(self, signalSamples) -> None:
     """
     Predict the labels of the test data
 
@@ -167,11 +169,6 @@ class GenerativeAdversarialNetwork(IGeneration):
 
     :return: predictions
     """
-    fixedGeneratedImages = self.generator(fixedSignalSamples)
-    fixedGeneratedImages = fixedGeneratedImages.detach().cpu()
-    self.plotImages(
-      imgDir,
-      fixedGeneratedImages,
-      f'epoch_{str(epoch).zfill(3)}.png',
-      subtitle=f'Epoch {epoch}'
-    )
+    generatedImages = self.generator(signalSamples)
+    generatedImages = generatedImages.detach().cpu()
+    return generatedImages

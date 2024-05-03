@@ -32,7 +32,8 @@ class UNeuralNetwork(IGeneration):
   ) -> None:
     trainLoaderLen = len(trainLoader)
 
-    for realImagesSamples, signalSamples, signalLabels in trainLoader:
+    for batch in trainLoader:
+      realImagesSamples, signalSamples, signalLabels, _ = batch
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
@@ -67,7 +68,8 @@ class UNeuralNetwork(IGeneration):
     """
     testLoaderLen = len(testLoader)
 
-    for realImagesSamples, signalSamples, signalLabels in testLoader:
+    for batch in testLoader:
+      realImagesSamples, signalSamples, signalLabels, _ = batch
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
@@ -78,7 +80,7 @@ class UNeuralNetwork(IGeneration):
     losses = {f'UNET {k}': v / testLoaderLen for k, v in losses.items()}
     return losses
 
-  def predict(self, fixedSignalSamples, imgDir, epoch) -> None:
+  def predict(self, signalSamples) -> None:
     """
     Predict the labels of the test data
 
@@ -86,6 +88,6 @@ class UNeuralNetwork(IGeneration):
 
     :return: predictions
     """
-    fixedGeneratedImages = self.unet(fixedSignalSamples)
-    fixedGeneratedImages = fixedGeneratedImages.detach().cpu()
-    self.plotImages(imgDir, fixedGeneratedImages, f'epoch_{str(epoch).zfill(3)}.png', subtitle=f'Epoch {epoch}')
+    generatedImages = self.unet(signalSamples)
+    generatedImages = generatedImages.detach().cpu()
+    return generatedImages
