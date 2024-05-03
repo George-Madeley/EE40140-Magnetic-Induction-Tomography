@@ -29,7 +29,8 @@ def runModels():
   if batchSize not in commonFactors:
     raise ValueError(f"Common factor {batchSize} not found in {commonFactors}")
 
-  structureNN = {
+
+  NNs = {
     'NN1': [480],
     'NN2': [960],
     'NN3': [1200],
@@ -37,6 +38,19 @@ def runModels():
     'NN5': [480, 960],
     'NN6': [480, 2400],
     'NN7': [1200,2400],
+  }
+
+  CNNs = {
+    'CNN1': [2],
+    'CNN2': [4],
+    'CNN3': [5],
+    'CNN4': [10],
+    'CNN5': [2, 4],
+    'CNN6': [2, 10],
+    'CNN7': [5, 10],
+  }
+
+  GANs = {
     'GAN1': {
       'discriminator': [64],
       'generator': [480]
@@ -65,6 +79,28 @@ def runModels():
       'discriminator': [20, 400],
       'generator': [1200, 2400]
     },
+  }
+
+  DCGANs = {
+    'DCGAN1': {
+      'discriminator': [2],
+      'generator': [2]
+    },
+    'DCGAN2': {
+      'discriminator': [4],
+      'generator': [4]
+    },
+    'DCGAN3': {
+      'discriminator': [2, 4, 2],
+      'generator': [2, 4, 2]
+    },
+    'DCGAN4': {
+      'discriminator': [2, 6, 2],
+      'generator': [2, 6, 2]
+    },
+  }
+
+  VAEs = {
     'VAE1': {
       'encoder': [48, 12, 4],
       'decoder': [10, 60, 480]
@@ -89,6 +125,9 @@ def runModels():
       'encoder': [40, 8, 4],
       'decoder': [12, 60, 480]
     },
+  }
+
+  UNNs = {
     'UNN1': [5],
     'UNN2': [5, 2],
     'UNN3': [5, 2, 2],
@@ -100,24 +139,42 @@ def runModels():
     'UNN9': [4, 5],
     'UNN10': [10],
     'UNN11': [10, 2],
+  }
+
+  ResNet = {
     'ResNet': []
   }
 
+  defaultArgs = {
+    'labelName': labelName,
+    'noise': True,
+    'downScaleFactor': 32,
+    'batchSize': batchSize,
+    'learningRate': 0.0001,
+    'maxEpoch': 1000,
+    'perPixelLoss': True,
+    'oneHotEncode': True,
+  }
 
+  models = []
 
-  models = [
-    UNN(
-      labelName=labelName,
-      noise=True,
-      downScaleFactor=8,
-      structure=structureNN.get(f'UNN{i}'),
-      name=f'UNN{i}',
-      batchSize=batchSize,
-      learningRate=0.0001,
-      maxEpoch=1000,
-      perPixelLoss=True,
-      oneHotEncode=True
-    ) for i in range(1, 12)
+  models += [
+    NN(
+      structure=structure,
+      name=name,
+      conv=True, 
+      **defaultArgs
+    ) for name, structure in CNNs.items()
+  ]
+
+  models += [
+    GAN(
+      structure=structure,
+      name=name,
+      convD=True,
+      convG=True,
+      **defaultArgs
+    ) for name, structure in DCGANs.items()
   ]
 
   for model in models:

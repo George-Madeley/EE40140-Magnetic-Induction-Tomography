@@ -8,7 +8,9 @@ from pandas import DataFrame, concat
 from torch import nn
 import numpy as np
 import torch
-from skimage.metrics import structural_similarity as ssim
+
+from ignite.metrics import SSIM
+from ignite.engine import Engine
 
 from ..IModel import IModel
 
@@ -62,7 +64,8 @@ class IGeneration(IModel):
         "BCE",
         "BCELogits",
         "MSE",
-        "MAE"
+        "MAE",
+        "SSIM"
       ]
     
     if self.perPixelLoss:
@@ -285,11 +288,17 @@ class IGeneration(IModel):
     MAELoss = nn.functional.l1_loss(predicted, actual).item()
     if 'MAE' in scoring: newScoring['MAE'] += MAELoss
 
-    # # Calculate the SSIM score
-    # actual = actual.detach().cpu().numpy()
-    # predicted = predicted.detach().cpu().numpy()
-    # ssimScore = ssim(actual, predicted, data_range=1)
-    # if 'SSIM' in scoring: newScoring['SSIM'] += ssimScore
+    # SSIM loss
+    def eval_step(engine, batch):
+      return batch
+
+    default_evaluator = Engine(eval_step)
+
+    ssim = SSIM(data_range=1.0)
+    ssim.attach(default_evaluator, 'SSIM')
+    state = default_evaluator.run([[predicted, actual]])
+    SSIMLoss = state.metrics['SSIM']
+    if 'SSIM' in scoring: newScoring['SSIM'] += SSIMLoss
 
     return newScoring
   

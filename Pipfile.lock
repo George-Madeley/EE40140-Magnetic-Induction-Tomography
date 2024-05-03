@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "cdc0d423fc60516e9a8f37cf9525058209df6517c01022f7661f14d1a397cf6b"
+            "sha256": "5dca3fbc4a66a854e0c5d4d29320117d203d827c33e19b0c21f6e983567879a5"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -595,6 +595,14 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==2.9.0.post0"
+        },
+        "pytorch-ignite": {
+            "hashes": [
+                "sha256:052510ec92fa3e4b3a0ba2296b09b3465ad12eadf657ba58e0760dbde0f3200d",
+                "sha256:d1f60c6ed17fa0f03920f20297de6614c8ed5cb6ad6054160d22de248ccd761f"
+            ],
+            "index": "pypi",
+            "version": "==0.5.0.post2"
         },
         "pytorch-ssim": {
             "hashes": [

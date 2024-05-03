@@ -12,6 +12,7 @@ torch = "*"
 scikit-learn = "*"
 scikit-image = "*"
 pytorch-ssim = "*"
+pytorch-ignite = "*"
 
 [dev-packages]
 
