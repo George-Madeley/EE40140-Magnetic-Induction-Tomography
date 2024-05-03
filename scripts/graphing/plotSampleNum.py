@@ -1,9 +1,14 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_sample_counts():
+import os
+
+def plotSampleNum(
+    verbose: bool = False
+):
   # Read the CSV file
-  data = pd.read_csv('./data/data_samples.csv')
+  file_path = os.path.join('data', 'data_samples.csv')
+  data = pd.read_csv(file_path)
 
   # Make sure the 'sample' column is of type string
   data['sample'] = data['sample'].astype(str)
@@ -13,21 +18,28 @@ def plot_sample_counts():
 
   # Plot the bar chart
   colors = ['blue' if label < 'H' else 'orange' for label in sample_counts.index]
+  colors[0] = 'black'
   plt.bar(sample_counts.index, sample_counts.values, color=colors)
   plt.xlabel('Sample')
   plt.ylabel('Count')
   plt.title('Sample Counts')
 
   # plot a key
-  plt.bar(0, 0, color='blue', label='Iron Samples')
+  plt.bar(0, 0, color='black', label='Null Samples')
+  plt.bar(0, 0, color='blue', label='Aluminium Samples')
   plt.bar(0, 0, color='orange', label='Copper Samples')
   plt.legend()
   
   # Save the plot to a file
-  plt.savefig('./images/graphs/sample_counts.png', dpi=300, bbox_inches='tight')
+  save_path = os.path.join('images', 'graphs', 'sample - counts.png')
+  plt.savefig(save_path, dpi=300, bbox_inches='tight')
+
+  if verbose:
+    plt.show()
+
   plt.close()
 
 
 if __name__ == '__main__':
   # Call the function to generate the plot
-  plot_sample_counts()
+  plotSampleNum()
