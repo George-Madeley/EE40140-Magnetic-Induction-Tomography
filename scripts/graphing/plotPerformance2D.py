@@ -3,9 +3,14 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 
+from utils import formatString, addUnits
+
 import os
 
-def plotPerformance2D(model: str) -> None:
+def plotPerformance2D(
+      model: str,
+      verbose: bool = False
+  ) -> None:
     """
     Plots the performance of a model in 2D.
 
@@ -15,13 +20,15 @@ def plotPerformance2D(model: str) -> None:
 
     # Get a list of all the files in the directory 'results'
     # directory that starts with the model name.
-    files = os.listdir('results')
+    directory = os.path.join('results', 'classification')
+    files = os.listdir(directory)
     files = [f for f in files if f.startswith(model)]
+    dfs = [pd.read_csv(os.path.join(directory, f)) for f in files]
 
-    # Create a list of all the dataframes.
-    dfs = [pd.read_csv(os.path.join('results', f)) for f in files]
+    if len(dfs) == 0:
+        print(f'No data found for {model}')
+        return
 
-    # Concatenate all the dataframes.
     data = pd.concat(dfs)
 
     # get the column names between 'num_samples' and 'Accuracy'
@@ -63,30 +70,24 @@ def plotPerformance2D(model: str) -> None:
     size = 200
     cmap = 'RdYlGn'
 
-    # cmap options: 'plasma', 'binary', 'YlGn'
-
-    print('\n\n Filename: ')
-    fileName = str(input('>?\t'))
 
     plt_accuracy = graphPlot(x_feature, y_feature, 'Accuracy', data, model, indicators, stat, size, cmap)
-    if fileName != '':
-        filePath = os.path.join('images', 'graphs', f'{fileName} - Accuracy.png')
-        plt_accuracy.savefig(filePath)
-    else:
+    save_dir = os.path.join('images', 'graphs', 'performance 2D')
+    os.makedirs(save_dir, exist_ok=True)        
+    plt_accuracy.savefig(os.path.join(save_dir, f'{formatString(model)} - Accuracy.png'))
+
+    if verbose:
         plt_accuracy.show()
 
     plt.close('all')
 
 
     plt_time = graphPlot(x_feature, y_feature, 'mean_score_time', data, model, indicators, stat, size, cmap + '_r')
-    if fileName != '':
-        filePath = os.path.join('images', 'graphs', f'{fileName} - Time.png')
-        plt_time.savefig(filePath)
-    else:
+    plt_time.savefig(os.path.join(save_dir, f'{formatString(model)} - Time.png'))
+    
+    if verbose:
         plt_time.show()
     
-
-
     plt.close('all')
 
 def graphPlot(x_feature, y_feature, hue, data, model, indicators=False, stat='mean', size=200, cmap='RdYlGn'):
@@ -109,10 +110,7 @@ def graphPlot(x_feature, y_feature, hue, data, model, indicators=False, stat='me
   data[x_feature] = data[x_feature].astype(str)
   data[y_feature] = data[y_feature].astype(str)
 
-  # remove rows where max_depth is 1
-  # data = data[data[x_feature] != '1'].reset_index(drop=True)
-  # data = data[data[y_feature] != 'log'].reset_index(drop=True)
-
+  data = removeFeatureValues(model, data)
 
   # create a dummy scatter plot to define a mappable for the colorbar creation
   dummy_plot = plt.scatter([], [], c=[], cmap=cmap)
@@ -132,31 +130,55 @@ def graphPlot(x_feature, y_feature, hue, data, model, indicators=False, stat='me
       plt.text(data[x_feature][i], data[y_feature][i], round(data[stat][i], 2), ha='center', va='bottom')
   
   # Add a color bar
-  plt.colorbar(dummy_plot, label=formatString(hue))
+  colorbar = plt.colorbar(dummy_plot, label=formatString(hue))
+  colorbar.set_label(addUnits(formatString(hue)))
   plt.clim(data[stat].min(), data[stat].max())
 
   plt.tight_layout()
 
   return plt
 
-def formatString(string: str) -> str:
+def removeFeatureValues(
+      model: str,
+      data: pd.DataFrame
+  ):
     """
-    Formats a string to be more readable.
-
-    Args:
-        string (str): The string to format.
+    Removes the specified values from the specified feature in the data.
 
     Returns:
-        str: The formatted string.
+        pd.DataFrame
     """
-    # if there is a captial letter in the string that is not the first letter
-    # add a space before it
-    for i in range(1, len(string)):
-      if string[i].isupper() and string[i-1] != ' ':
-        string = string[:i] + ' ' + string[i:]
-    return string.replace('_', ' ').title()
+    if model == 'DecisionTree':
+      # set 'max_depth' to int
+      data['max_depth'] = data['max_depth'].astype(int)
+      # remove records where 'max_depth' is 1
+      data = data[data['max_depth'] != 1]
+
+    elif model == 'RandomForest':
+      # set 'max_depth' to int
+      data['max_depth'] = data['max_depth'].astype(int)
+       # remove records where 'max_depth' is 1
+      data = data[data['max_depth'] != 1]
+
+    elif model == 'StochasticGradientDescent':
+       # remove records where 'Loss' is 'squared_hinge' or 'log'
+      data = data[data['loss'] != 'squared_hinge']
+      data = data[data['loss'] != 'log']
+
+    elif model == 'SupportVectorMachine':
+       # remove records where kernel is 'sigmoid'
+      data = data[data['kernel'] != 'sigmoid']
+
+    return data
 
 if __name__ == '__main__':
-    model = 'DecisionTree'
-    plotPerformance2D(model)
+    models = [
+      'DecisionTree',
+      'KNearestNeighbors',
+      'RandomForest',
+      'StochasticGradientDescent',
+      'SupportVectorMachine'
+    ]
+    for model in models:
+      plotPerformance2D(model)
     
