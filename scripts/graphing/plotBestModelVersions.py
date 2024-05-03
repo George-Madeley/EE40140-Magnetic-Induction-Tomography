@@ -2,32 +2,35 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+from utils import formatString
+
 import os
 
-def plotBestModelVersions():
+def plotBestModelVersions(
+    material: str = 'aluminium',
+    verbose: bool = False
+):
   models = {
     'NN': 'ANN',
     'GAN': 'G',
     'VAE': 'VAE'
   }
 
-  directory = os.path.join('results', 'generation')
+  directory = os.path.join('results', 'generation', material)
   files = os.listdir(directory)
 
-  for model, id in models.items():
+  for model, sub_model in models.items():
     model_files = [file for file in files if file.startswith(model)]
-
     df = pd.DataFrame()
 
-    # metric
-    metric = f'test {id} MAE Loss'
+    metric = f'test {sub_model} MAE Loss'
 
     for model_file in model_files:
       model_df = pd.read_csv(os.path.join(directory, model_file))
 
-      modelId = model_file.split(' - ')[0]
+      model_id = model_file.split(' - ')[0]
 
-      model_df['Model Name'] = modelId
+      model_df['Model Name'] = model_id
 
       # Find the records in each group with the min metric
       model_df = model_df[model_df[metric] == model_df[metric].min()]
@@ -39,53 +42,41 @@ def plotBestModelVersions():
 
     # replace all the columns with 'test' in the name with ''
     df.columns = df.columns.str.replace('test ', '')
-    df.columns = df.columns.str.replace(f'{id} ', '')
+    df.columns = df.columns.str.replace(f'{sub_model} ', '')
 
     # format all the column names
     df.columns = [formatString(col) for col in df.columns]
 
     # save the dataframe to a csv file
-    savepath = os.path.join('results', 'generation', f'{model} - best.csv')
+    save_dir = os.path.join('results', 'generation', 'best')
+    os.makedirs(save_dir, exist_ok=True)
+    savepath = os.path.join(save_dir, f'{model} {material} - best.csv')
     df.to_csv(savepath, index=False)
 
-def formatString(string: str) -> str:
-  """
-  Formats a string to be more readable.
+    # plot the dataframe
+    sns.set(style='whitegrid')
+    sns.set_context('talk')
+    plt.figure(figsize=(10, 6))
+    sns.barplot(data=df, x='Model Name', y=f'MAE Loss')
+    plt.xlabel('Model Name', fontsize=20)
+    plt.ylabel(f'MAE Loss', fontsize=20)
 
-  Args:
-      string (str): The string to format.
+    # Use scientific notation for the y-axis
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
-  Returns:
-      str: The formatted string.
-  """
-  metrics = [
-    'MAE Loss',
-    'MSE Loss',
-    'BCE Loss',
-    'BCELogits Loss'
-  ]
-  if string in metrics:
-    return string
+    plt.title(f'{model} MAE Loss for {material} Models', fontsize=20)
+    plt.tight_layout()
 
-  # if there is a captial letter in the string that is not the first letter
-  # add a space before it
-  modelInitials = {
-    'DecisionTree': 'DT',
-    'KNearestNeighbors': 'KNN',
-    'NearestCentroid': 'NC',
-    'NeuralNetwork': 'NN',
-    'RandomForest': 'RF',
-    'StochasticGradientDescent': 'SGD',
-    'SupportVectorMachine': 'SVM'
-  }
-  if string in modelInitials.keys():
-    return modelInitials[string]
+    save_dir = os.path.join('images', 'graphs', 'best-model-versions')
+    os.makedirs(save_dir, exist_ok=True)
+    savepath = os.path.join(save_dir, f'{model} {material} - best.png')
+    plt.savefig(savepath)
 
+    if verbose:
+      plt.show()
 
-  for i in range(1, len(string)):
-    if string[i].isupper() and string[i - 1] != ' ':
-      string = string[:i] + ' ' + string[i:]
-  return string.replace('_', ' ').title()
+    plt.close()
+
 
 if __name__ == '__main__':
   plotBestModelVersions()
