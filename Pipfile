@@ -11,6 +11,7 @@ seaborn = "*"
 torch = "*"
 scikit-learn = "*"
 scikit-image = "*"
+pytorch-ssim = "*"
 
 [dev-packages]
 
