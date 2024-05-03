@@ -3,11 +3,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+from utils import formatString, formatMetricName
+
 import os
 
 def plotPerformanceOverEpoch(
     model: Literal['NN', 'GAN', 'VAE'] = 'NN',
-    metric: Literal['BCE', 'BCELogits', 'MSE', 'MAE'] = 'BCE'
+    metric: Literal['BCE', 'BCELogits', 'MSE', 'MAE'] = 'BCE',
+    verbose: bool = False
 ):
   directory = os.path.join('results', 'generation')
   files = os.listdir(directory)
@@ -97,37 +100,11 @@ def plotPerformanceOverEpoch(
     saveDir = os.path.join('images', 'graphs', 'performance', model, metric)
     os.makedirs(saveDir, exist_ok=True)
     plt.savefig(os.path.join(saveDir, f'{modelID} - {metric}.png'))
-    # plt.show()
-    plt.close()
-
-def formatString(string: str) -> str:
-  """
-  Formats a string to be more readable.
-
-  Args:
-      string (str): The string to format.
-
-  Returns:
-      str: The formatted string.
-  """
-
-  if string == 'iron':
-    string = 'aluminum'
-
-  for i in range(1, len(string)):
-    if string[i].isupper() and string[i - 1] != ' ':
-      string = string[:i] + ' ' + string[i:]
-  return string.replace('_', ' ').title()
-
-
-def formatMetricName(string):
-  metricNames = ['BCELogits', 'BCE', 'MSE', 'MAE']
-
-  for name in metricNames:
-    if name in string:
-      return name
     
-  return string
+    if verbose:
+      plt.show()
+
+    plt.close()
 
 if __name__ == '__main__':
   models = ['NN', 'GAN', 'VAE']
