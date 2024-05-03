@@ -2,7 +2,7 @@ from torch import nn
 from torch import Tensor
 
 
-class Discriminator(nn.Module):
+class FeedforwardDiscriminator(nn.Module):
   """
   Discriminator class for image generation.
 

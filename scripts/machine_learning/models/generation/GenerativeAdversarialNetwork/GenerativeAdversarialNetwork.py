@@ -3,13 +3,15 @@ from torch import nn
 from torch.optim import Adam
 from pandas import DataFrame
 
-from .Discriminator import Discriminator
-from .Generator import Generator
+from .FeedforwardDiscriminator import FeedforwardDiscriminator
+from .FeedforwardGenerator import FeedforwardGenerator
+from .ConvolutionalDiscriminator import ConvolutionalDiscriminator
+from .ConvolutionalGenerator import ConvolutionalGenerator
 from ..IGeneration import IGeneration
 
 
 class GenerativeAdversarialNetwork(IGeneration):
-  def __init__(self, structure, **kwargs):
+  def __init__(self, structure, convD: bool = False, convG: bool = False, **kwargs):
     """
     Initialize a GenerativeAdversarialNetwork object.
 
@@ -22,11 +24,22 @@ class GenerativeAdversarialNetwork(IGeneration):
     discriminatorStructure = structure.get('discriminator')
     generatorStructure = structure.get('generator')
 
+    if convD:
+      Discriminator = ConvolutionalDiscriminator
+    else:
+      Discriminator = FeedforwardDiscriminator
+
+    if convG:
+      Generator = ConvolutionalGenerator
+    else:
+      Generator = FeedforwardGenerator
+
     self.discriminator = Discriminator(
       640 // self.downScaleFactor,
       480 // self.downScaleFactor,
       discriminatorStructure
     ).to(self.device)
+
     self.generator = Generator(
       240 if self.noise else 120,
       640 // self.downScaleFactor,

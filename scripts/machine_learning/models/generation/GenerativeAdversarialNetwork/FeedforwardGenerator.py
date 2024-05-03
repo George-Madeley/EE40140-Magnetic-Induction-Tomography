@@ -2,7 +2,7 @@ from torch import nn
 from torch import Tensor
 
 
-class Generator(nn.Module):
+class FeedforwardGenerator(nn.Module):
   """
   Generator class for generating images using a neural network.
 
