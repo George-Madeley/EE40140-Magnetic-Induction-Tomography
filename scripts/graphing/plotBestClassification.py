@@ -10,7 +10,6 @@ def plotBestClassification():
       'DecisionTree',
       'KNearestNeighbors',
       'NearestCentroid',
-      'NeuralNetwork',
       'RandomForest',
       'StochasticGradientDescent',
       'SupportVectorMachine'
@@ -37,6 +36,12 @@ def plotBestClassification():
     dfs = [pd.read_csv(os.path.join(directory, f)) for f in files]
     data = pd.concat(dfs)
 
+    # replace the material 'iron' with 'aluminum'
+    data['material'] = data['material'].replace('iron', 'aluminum')
+
+    # remove any record where the accuracy is 1.0
+    data = data[data['Accuracy'] < 1.0]
+
     # Get the list of columns between 'material' and 'accuracy'
     columns = data.columns.tolist()
     model_index = columns.index('numSamples')
@@ -44,9 +49,9 @@ def plotBestClassification():
     columns = columns[model_index + 1:accuracy_index]
 
     # group by numSamples
-    data = data.groupby('numSamples')
+    data = data.groupby(['numSamples', 'material'])
 
-    for numSamples, group in data:
+    for name, group in data:
 
       # Reset the index of the group DataFrame
       group = group.reset_index(drop=True)
@@ -61,6 +66,17 @@ def plotBestClassification():
       
       # Concatenate the best record to the best DataFrame
       df_best = pd.concat([df_best, best])
+
+  # group the best DataFrame by the material
+  grouped = df_best.groupby('material')
+
+  for material, group in grouped:
+
+    # Format the model column by passing each value to the formatString function
+    group['model'] = group['model'].apply(formatString)
+
+    # save the group to a csv file
+    group.to_csv(os.path.join('results', 'classification', f'best-{material}.csv'), index=False)
 
   fontSize = 20
 
