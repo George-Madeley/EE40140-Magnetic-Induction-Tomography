@@ -204,6 +204,9 @@ class IGeneration(IModel):
       roundActual[roundActual == 0.01] = 0
       roundActual[roundActual == 0.99] = 1
 
+      actual = actual.to(self.device)
+      predicted = predicted.to(self.device)
+
       # Calculate the absolute difference between the actual and predicted values
       absDiff = torch.abs(actual - predicted)
 

@@ -2,14 +2,20 @@ from torch import nn
 from torch.optim import Adam
 from pandas import DataFrame
 
-from .ArtificialNeuralNetwork import ANN
+from .FeedforwardNeuralNetwork import FeedforwardNeuralNetwork
+from .ConvolutionalNeuralNetwork import ConvolutionalNeuralNetwork
 from ..IGeneration import IGeneration
 
 class NeuralNetwork(IGeneration):
-  def __init__(self, structure, **kwargs,):
+  def __init__(self, structure, conv: bool = False, **kwargs,):
     super().__init__(**kwargs)
 
-    self.network = ANN(
+    if conv:
+      ArtificialNeuralNetwork = ConvolutionalNeuralNetwork
+    else:
+      ArtificialNeuralNetwork = FeedforwardNeuralNetwork
+
+    self.network = ArtificialNeuralNetwork(
       inputSize= 240 if self.noise else 120,
       width=640 // self.downScaleFactor,
       height=480 // self.downScaleFactor,
@@ -23,7 +29,7 @@ class NeuralNetwork(IGeneration):
 
     self.aLossFunc = nn.BCELoss()
 
-    self.modelNames = ['ANN']
+    self.modelNames = ['N']
 
   def train(
     self,
@@ -53,7 +59,7 @@ class NeuralNetwork(IGeneration):
       loss.backward()
       self.optimizer.step()
 
-    losses = {f'ANN {k}': v / trainLoaderLen for k, v in losses.items()}
+    losses = {f'{self.modelNames[0]} {k}': v / trainLoaderLen for k, v in losses.items()}
 
     return loss, losses
   
@@ -73,7 +79,7 @@ class NeuralNetwork(IGeneration):
 
       losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
     
-    losses = {f'ANN {k}': v / testLoaderLen for k, v in losses.items()}
+    losses = {f'{self.modelNames[0]} {k}': v / testLoaderLen for k, v in losses.items()}
     return losses
   
   def predict(self, signalSample) -> None:

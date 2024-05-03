@@ -2,7 +2,7 @@ from torch import nn
 from torch import Tensor
 
 
-class ANN(nn.Module):
+class FeedforwardNeuralNetwork(nn.Module):
   """
   ANN class for generating images using a neural network.
 
