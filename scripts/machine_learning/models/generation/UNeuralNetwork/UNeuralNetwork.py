@@ -1,8 +1,7 @@
+import torch
 from torch import nn
-from torch.optim import Adam
 
-from .Contractor import Contractor
-from .Expandor import Expandor
+from .UNet import UNet
 from ..IGeneration import IGeneration
 
 
@@ -10,28 +9,19 @@ class UNeuralNetwork(IGeneration):
   def __init__(self, structure, **kwargs):
     super().__init__(**kwargs)
 
-    contractorStructure = structure.get('contractor')
-    expandorStructure = structure.get('expandor')
-
-    self.contractor = Contractor(
-      contractorStructure
-    ).to(self.device)
-    self.expandor = Expandor(
+    self.unet = UNet(
+      240 if self.noise else 120,
       640 // self.downScaleFactor,
       480 // self.downScaleFactor,
-      expandorStructure
+      structure
     ).to(self.device)
 
-    self.optimizerContractor = Adam(
-      self.contractor.parameters(),
-      lr=self.learningRate
-    )
-    self.optimizerExpandor = Adam(
-      self.expandor.parameters(),
+    self.optimizerUNet = torch.optim.Adam(
+      self.unet.parameters(),
       lr=self.learningRate
     )
 
-    self.eLossFunc = nn.MSELoss()
+    self.uLossFunc = nn.MSELoss()
 
     self.modelNames = ['UNET']
 
@@ -42,22 +32,20 @@ class UNeuralNetwork(IGeneration):
   ) -> None:
     trainLoaderLen = len(trainLoader)
 
-    for realImagesSamples, signalSamples in trainLoader:
+    for realImagesSamples, signalSamples, signalLabels in trainLoader:
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
-      self.optimizerContractor.zero_grad()
-      self.optimizerExpandor.zero_grad()
+      self.optimizerUNet.zero_grad()
 
-      latentSamples = self.contractor(signalSamples)
-      generatedImageSamples = self.expandor(latentSamples)
+      generatedImageSamples = self.unet(signalSamples)
 
-      loss = self.eLossFunc(realImagesSamples, generatedImageSamples)
+      loss = self.uLossFunc(realImagesSamples, generatedImageSamples)
       loss.backward()
-      self.optimizerContractor.step()
-      self.optimizerExpandor.step()
 
-      losses = super().score(metrics, realImagesSamples, generatedImageSamples)
+      self.optimizerUNet.step()
+
+      losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
 
     losses = {f'UNET {k}': v / trainLoaderLen for k, v in losses.items()}
 
@@ -79,14 +67,13 @@ class UNeuralNetwork(IGeneration):
     """
     testLoaderLen = len(testLoader)
 
-    for realImagesSamples, signalSamples in testLoader:
+    for realImagesSamples, signalSamples, signalLabels in testLoader:
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
-      latentSamples = self.contractor(signalSamples)
-      generatedImageSamples = self.expandor(latentSamples)
+      generatedImageSamples = self.unet(signalSamples)
 
-      losses = super().score(metrics, realImagesSamples, generatedImageSamples)
+      losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
     
     losses = {f'UNET {k}': v / testLoaderLen for k, v in losses.items()}
     return losses
@@ -99,7 +86,6 @@ class UNeuralNetwork(IGeneration):
 
     :return: predictions
     """
-    fixedLatentSamples = self.contractor(fixedSignalSamples)
-    fixedGeneratedImages = self.expandor(fixedLatentSamples)
+    fixedGeneratedImages = self.unet(fixedSignalSamples)
     fixedGeneratedImages = fixedGeneratedImages.detach().cpu()
     self.plotImages(imgDir, fixedGeneratedImages, f'epoch_{str(epoch).zfill(3)}.png', subtitle=f'Epoch {epoch}')

@@ -89,32 +89,35 @@ def runModels():
       'encoder': [40, 8, 4],
       'decoder': [12, 60, 480]
     },
-    'UNN1': {
-      'contractor': [64, 128, 256, 512],
-      'bottleneck': [32, 352, 3872],
-      'expandor': [
-        [3872, 1936],
-        [1952, 976, 488],
-        [496, 248, 124],
-        [128, 64]
-      ]
-    },
+    'UNN1': [5],
+    'UNN2': [5, 2],
+    'UNN3': [5, 2, 2],
+    'UNN4': [5, 4],
+    'UNN5': [2],
+    'UNN6': [2, 2],
+    'UNN7': [2, 5],
+    'UNN8': [2, 2, 5],
+    'UNN9': [4, 5],
+    'UNN10': [10],
+    'UNN11': [10, 2],
     'ResNet': []
   }
 
 
 
   models = [
-    ResNet(
+    UNN(
       labelName=labelName,
       noise=True,
-      downScaleFactor=10,
-      structure=structureNN.get('ResNet'),
-      name='ResNet1',
+      downScaleFactor=8,
+      structure=structureNN.get(f'UNN{i}'),
+      name=f'UNN{i}',
       batchSize=batchSize,
       learningRate=0.0001,
       maxEpoch=1000,
-    ),
+      perPixelLoss=True,
+      oneHotEncode=True
+    ) for i in range(1, 12)
   ]
 
   for model in models:
