@@ -65,7 +65,7 @@ class GenerativeAdversarialNetwork(IGeneration):
 
     trainLoaderLen = len(trainLoader)
     
-    for realImageSamples, signalSamples in trainLoader:
+    for realImageSamples, signalSamples, signalLabels in trainLoader:
       # Create and label the real samples, the generated samples, and the
       # latent space samples. Send them to the chosen device i.e., CPU or GPU.
       realImageSamples = realImageSamples.to(device=self.device)
@@ -94,8 +94,8 @@ class GenerativeAdversarialNetwork(IGeneration):
       lossGenerator.backward()
       self.optimizerGenerator.step()
 
-      discriminatorLosses = super().score(metrics, allImageSampleLabels, outputDiscriminator)
-      generatorLosses = super().score(metrics, realImageSamples, generatedSamples)
+      discriminatorLosses = super().score(metrics, allImageSampleLabels, outputDiscriminator, signalLabels, runPerPixelLoss=False)
+      generatorLosses = super().score(metrics, realImageSamples, generatedSamples, signalLabels)
 
     discriminatorLosses = {f'D {k}': v / trainLoaderLen for k, v in discriminatorLosses.items()}
     generatorLosses = {f'G {k}': v / trainLoaderLen for k, v in generatorLosses.items()}
@@ -128,7 +128,7 @@ class GenerativeAdversarialNetwork(IGeneration):
     """
     testLoaderLen = len(testLoader)
 
-    for realSamples, latentSpaceSamples in testLoader:
+    for realSamples, latentSpaceSamples, signalLabels in testLoader:
       # Create and label the real samples, the generated samples, and the
       # latent space samples. Send them to the chosen device i.e., CPU or GPU.
       realSamples = realSamples.to(device=self.device)
@@ -142,12 +142,12 @@ class GenerativeAdversarialNetwork(IGeneration):
       # Test the discriminator
       self.discriminator.zero_grad()
       outputDiscriminator = self.discriminator(allSamples)
-      discriminatorLosses = super().score(metrics, allSampleLabels, outputDiscriminator)
+      discriminatorLosses = super().score(metrics, allSampleLabels, outputDiscriminator, signalLabels, runPerPixelLoss=False)
 
       # Test the generator
       self.generator.zero_grad()
       generatedSamples = self.generator(latentSpaceSamples)
-      generatorLosses = super().score(metrics, realSamples, generatedSamples)
+      generatorLosses = super().score(metrics, realSamples, generatedSamples, signalLabels)
 
     discriminatorLosses = {f'D {k}': v / testLoaderLen for k, v in discriminatorLosses.items()}
     generatorLosses = {f'G {k}': v / testLoaderLen for k, v in generatorLosses.items()}

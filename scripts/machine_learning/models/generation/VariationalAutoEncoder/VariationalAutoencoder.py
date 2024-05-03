@@ -43,7 +43,7 @@ class VariationalAutoencoder(IGeneration):
   ) -> None:
     trainLoaderLen = len(trainLoader)
 
-    for realImagesSamples, signalSamples in trainLoader:
+    for realImagesSamples, signalSamples, signalLabels in trainLoader:
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
@@ -59,7 +59,7 @@ class VariationalAutoencoder(IGeneration):
       self.optimizerEncoder.step()
       self.optimizerDecoder.step()
 
-      losses = super().score(metrics, realImagesSamples, generatedImageSamples)
+      losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
 
     losses = {f'VAE {k}': v / trainLoaderLen for k, v in losses.items()}
 
@@ -72,14 +72,14 @@ class VariationalAutoencoder(IGeneration):
   ):
     testLoaderLen = len(testLoader)
 
-    for realImagesSamples, signalSamples in testLoader:
+    for realImagesSamples, signalSamples, signalLabels in testLoader:
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
       latentSamples = self.encoder(signalSamples)
       generatedImageSamples = self.decoder(latentSamples)
 
-      losses = super().score(metrics, realImagesSamples, generatedImageSamples)
+      losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
     
     losses = {f'VAE {k}': v / testLoaderLen for k, v in losses.items()}
     return losses

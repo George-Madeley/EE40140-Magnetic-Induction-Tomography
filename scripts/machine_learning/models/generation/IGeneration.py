@@ -20,10 +20,14 @@ class IGeneration(IModel):
       downScaleFactor: int = 8,
       **kwargs
   ):
+    super().__init__()
+
     self.labelName = labelName
     self.noise = noise
     self.oneHotEncode = oneHotEncode
     self.downScaleFactor = downScaleFactor
+
+    self.perPixelLoss = kwargs.get('perPixelLoss', False)
 
     self.batchSize = kwargs.get('batchSize', 45)
     self.learningRate = kwargs.get('learningRate', 0.0001)
@@ -46,6 +50,11 @@ class IGeneration(IModel):
     fixedIndeces: list[int] = None,
     metrics: list = None
   ) -> None:
+
+    # Get the values and labels
+    trainLoader = self.getLoader(df_train)
+    testLoader = self.getLoader(df_test)
+    validLoader = self.getLoader(df_val)
       
     if metrics is None:
       metrics = [
@@ -54,7 +63,12 @@ class IGeneration(IModel):
         "MSE",
         "MAE"
       ]
-
+    
+    if self.perPixelLoss:
+      pixelMetrics = ['White MAE', 'Black MAE']
+      pixelMetrics = [f'{label} {metric}' for label in self.labelNames for metric in pixelMetrics]
+      metrics += pixelMetrics
+    
     # Create a unique ID for the results file and create the results file
     # with the appropriate columns.
     uniqueID = ''.join([choice(ascii_letters) for i in range(10)])
@@ -69,11 +83,6 @@ class IGeneration(IModel):
       **{f'train {modelName} {k} Loss': [] for k in metrics for modelName in self.modelNames},
       **{f'test {modelName} {k} Loss': [] for k in metrics for modelName in self.modelNames},
     })
-
-    # Get the values and labels
-    trainLoader = self.getLoader(df_train)
-    testLoader = self.getLoader(df_test)
-    validLoader = self.getLoader(df_val)
 
 
     # Get the fixed real images
@@ -110,7 +119,7 @@ class IGeneration(IModel):
       df_results = concat([df_results, df_newRow], axis=0)
       df_results.to_csv(resultsPath, index=False)
 
-  def score(self, scoring: list, actual, predicted):
+  def score(self, scoring: list, actual, predicted, labels, runPerPixelLoss: bool = True):
     """
     Calculate the scores for different loss functions and update the scoring dictionary.
 
@@ -124,6 +133,71 @@ class IGeneration(IModel):
     """
     newScoring = {k: 0 for k in scoring}
 
+    if self.perPixelLoss and runPerPixelLoss:
+      # the actual images are made up of 0.01 and 0.99 values. Replace the 0.01
+      # values with 0 and the 0.99 values with 1
+      roundActual = actual.clone()
+      roundActual[roundActual == 0.01] = 0
+      roundActual[roundActual == 0.99] = 1
+
+      # Calculate the absolute difference between the actual and predicted values
+      absDiff = torch.abs(actual - predicted)
+
+      # White MAE loss is the mean of the absolute difference between the actual
+      # and predicted values for the pixels that are 0.99 (1 in the rounded
+      # roundActual tensor)
+
+      numWhitePixels = torch.sum(roundActual, dim=(1, 2, 3))
+      whiteAE = absDiff * roundActual
+      sumWhiteAE = torch.sum(whiteAE, dim=(1, 2, 3))
+      whiteMAE = sumWhiteAE / numWhitePixels
+      whiteMAE = whiteMAE.detach().cpu().numpy()
+
+      # Black MAE loss is the mean of the absolute difference between the actual
+      # and predicted values for the pixels that are 0.01 (0 in the rounded
+      # roundActual tensor)
+      numBlackPixels = torch.sum(1 - roundActual, dim=(1, 2, 3))
+      blackAE = absDiff * (1 - roundActual)
+      sumBlackAE = torch.sum(blackAE, dim=(1, 2, 3))
+      blackMAE = sumBlackAE / numBlackPixels
+      blackMAE = blackMAE.detach().cpu().numpy()
+
+      # the labels are one-hot encoded. Get the index of the label that is 1
+      labelIndex = torch.argmax(labels, dim=1)
+      
+      # self.labelNames in a list of the label names. labelIndex is a tensor
+      # containing the indexes of the labels in self.labelNames that correspond
+      # to the actual image. Get the label names for the actual images
+      actualLabels = [self.labelNames[i] for i in labelIndex]
+      actualLabels = np.array(actualLabels)
+
+      # Create a dataframe with one column for the actual labels, one column for
+      # the white MAE loss, and one column for the black MAE loss.
+      df = DataFrame({
+        'Actual Labels': actualLabels,
+        'White MAE': whiteMAE,
+        'Black MAE': blackMAE
+      })
+
+      # Group the dataframe by the actual labels and calculate the mean of the
+      # white MAE and black MAE losses for each label
+      df = df.groupby('Actual Labels').mean()
+
+      # replace NaN values with 0
+      df = df.fillna(0)
+
+      for row in df.iterrows():
+        label = row[0]
+        whiteMAE = row[1]['White MAE']
+        blackMAE = row[1]['Black MAE']
+
+        newScoring[f'{label} White MAE'] += whiteMAE
+        newScoring[f'{label} Black MAE'] += blackMAE
+
+
+
+      
+    
     BCE = nn.functional.binary_cross_entropy(predicted, actual).item()
     if 'BCE' in scoring: newScoring['BCE'] += BCE
 
@@ -248,12 +322,17 @@ class IGeneration(IModel):
     """
     Get the data loader
     """
-    values, _ = self.getValuesAndLabels(df)
+    values, labels = self.getValuesAndLabels(df)
     images = self.getImages(df, self.downScaleFactor)
 
     values = torch.from_numpy(values).float()
 
-    dataSet = torch.utils.data.TensorDataset(images, values)
+    if not self.oneHotEncode and self.perPixelLoss:
+      raise ValueError("oneHotEncode must be True")
+    else:
+      labels = torch.from_numpy(labels).int()
+
+    dataSet = torch.utils.data.TensorDataset(images, values, labels)
 
     dataLoader = torch.utils.data.DataLoader(
         dataSet, batch_size=self.batchSize, shuffle=False

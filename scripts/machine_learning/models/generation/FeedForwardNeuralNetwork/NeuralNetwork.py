@@ -33,7 +33,7 @@ class NeuralNetwork(IGeneration):
     
     trainLoaderLen = len(trainLoader)
     
-    for realImageSamples, signalSamples in trainLoader:
+    for realImageSamples, signalSamples, signalLabels in trainLoader:
       # Create and label the real samples, the generated samples, and the
       # latent space samples. Send them to the chosen device i.e., CPU or GPU.
       realImageSamples = realImageSamples.to(device=self.device)
@@ -45,7 +45,7 @@ class NeuralNetwork(IGeneration):
       # Generate the fake samples
       generatedImageSamples = self.network(signalSamples)
 
-      losses = super().score(metrics, realImageSamples, generatedImageSamples)
+      losses = super().score(metrics, realImageSamples, generatedImageSamples, signalLabels)
 
       # Calculate the loss
       loss = self.aLossFunc(generatedImageSamples, realImageSamples)
@@ -63,13 +63,13 @@ class NeuralNetwork(IGeneration):
   ):
     testLoaderLen = len(testLoader)
 
-    for realImagesSamples, signalSamples in testLoader:
+    for realImagesSamples, signalSamples, signalLabels in testLoader:
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
       generatedImageSamples = self.network(signalSamples)
 
-      losses = super().score(metrics, realImagesSamples, generatedImageSamples)
+      losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
     
     losses = {f'ANN {k}': v / testLoaderLen for k, v in losses.items()}
     return losses

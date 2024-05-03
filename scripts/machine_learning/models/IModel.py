@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 from pandas import DataFrame
 
 class IModel(ABC):
+  def __init__(self) -> None:
+    self.labelNames = []
+
   @abstractmethod
   def train(self, df: DataFrame) -> None:
     """
@@ -53,6 +56,7 @@ class IModel(ABC):
 
     if self.oneHotEncode:
       labelColumnNames = df.filter(regex=f'^{self.labelName}_').columns
+      self.labelNames = [label[-1] for label in labelColumnNames]
       labels = df[labelColumnNames].values
     else:
       labels = df[self.labelName].values
