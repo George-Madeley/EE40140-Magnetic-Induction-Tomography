@@ -126,6 +126,9 @@ class IGeneration(IModel):
       df_results = concat([df_results, df_newRow], axis=0)
       df_results.to_csv(resultsPath, index=False)
 
+    self.validate(metrics, validLoader, uniqueID)
+
+  def validate(self, metrics, validLoader, uniqueID):
     df_val_results = DataFrame()
 
     for batch in validLoader:
@@ -137,7 +140,7 @@ class IGeneration(IModel):
 
       losses = self.singleScore(metrics, realImagesSamples, generatedImageSamples, signalLabels)
 
-      
+    
       labelIndex = torch.argmax(signalLabels, dim=1)
       actualLabels = [self.labelNames[i] for i in labelIndex]
       losses['Label'] = actualLabels
@@ -150,6 +153,24 @@ class IGeneration(IModel):
     columns = df_val_results.columns.tolist()
     columns = columns[-2:] + columns[:-2]
     df_val_results = df_val_results[columns]
+
+    # Get all the columns that contain the string 'White MAE'
+    whiteMAEColumns = [col for col in df_val_results.columns if 'White MAE' in col]
+
+    # Get all the columns that contain the string 'Black MAE'
+    blackMAEColumns = [col for col in df_val_results.columns if 'Black MAE' in col]
+
+    # Sum the columns together
+    whiteMAESum = df_val_results[whiteMAEColumns].sum(axis=1)
+    blackMAESum = df_val_results[blackMAEColumns].sum(axis=1)
+
+    # Drop the columns that contain the string 'White MAE' and 'Black MAE'
+    df_val_results = df_val_results.drop(columns=whiteMAEColumns + blackMAEColumns)
+
+    # Add the summed columns to the dataframe
+    df_val_results['White MAE'] = whiteMAESum
+    df_val_results['Black MAE'] = blackMAESum
+
     save_dir = os.path.join('results', 'generation', 'per image')
     os.makedirs(save_dir, exist_ok=True)
     df_val_results.to_csv(os.path.join(save_dir, f'{self.name} - {uniqueID}.csv'), index=False)
