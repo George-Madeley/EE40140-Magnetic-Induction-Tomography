@@ -85,17 +85,8 @@ class ResNet(nn.Module):
       residualBlock(64),
       doubleLayer(64, 128),
       bottleNeck(128, 32),
-      residualBlock(128),
-      residualBlock(128),
-      doubleLayer(128, 256),
-      bottleNeck(256, 64),
-      residualBlock(256),
-      doubleLayer(256, 512),
-      residualBlock(512),
-      residualBlock(512),
-      residualBlock(512),
-      avgLayer(512),
-      outLayer(512)
+      avgLayer(128),
+      outLayer(128)
     ])
 
     self.isResidual = [
@@ -104,15 +95,6 @@ class ResNet(nn.Module):
       True,
       True,
       False,
-      True,
-      True,
-      True,
-      False,
-      True,
-      True,
-      False,
-      True,
-      True,
       True,
       False,
       False
@@ -140,9 +122,11 @@ class ResNet(nn.Module):
       if isResidual:
         outputTensor = outputTensor + inputTensor
 
-      if idx == 15:
+      if idx == len(self.isResidual) - 2:
         # flatten the outputTensor from (512, 15, 20) to (512 * 15 * 20)
-        outputTensor = outputTensor.view(-1, 512 * 15 * 20)
+        outputTensor = outputTensor.view(-1, 128 * 15 * 20)
 
       inputTensor = outputTensor
+
+    outputTensor = outputTensor.view(x.size(0), 1, self.height, self.width)
     return outputTensor
