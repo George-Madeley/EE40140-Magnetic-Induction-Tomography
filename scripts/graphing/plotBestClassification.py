@@ -2,10 +2,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+from .utils import formatString
+
 import os
 
-def plotBestClassification():
 
+def plotBestClassification(
+    verbose: bool = False,
+):
   models = [
       'DecisionTree',
       'KNearestNeighbors',
@@ -15,19 +19,7 @@ def plotBestClassification():
       'SupportVectorMachine'
   ]
 
-  df_best = pd.DataFrame(columns=[
-    'model',
-    'material',
-    'numSamples',
-    'Accuracy',
-    'F1',
-    'Precision',
-    'Recall',
-    'mean_fit_time',
-    'std_fit_time',
-    'mean_score_time',
-    'std_score_time'
-  ])
+  df_best = pd.DataFrame()
 
   for model in models:
     directory = os.path.join('results', 'classification')
@@ -49,9 +41,9 @@ def plotBestClassification():
     columns = columns[model_index + 1:accuracy_index]
 
     # group by numSamples
-    data = data.groupby(['numSamples', 'material'])
+    groups = data.groupby(['numSamples', 'material'])
 
-    for name, group in data:
+    for name, group in groups:
 
       # Reset the index of the group DataFrame
       group = group.reset_index(drop=True)
@@ -63,20 +55,22 @@ def plotBestClassification():
 
       # Convert the best record to a DataFrame
       best = pd.DataFrame(best).T
-      
+
       # Concatenate the best record to the best DataFrame
       df_best = pd.concat([df_best, best])
 
   # group the best DataFrame by the material
-  grouped = df_best.groupby('material')
+  groups = df_best.groupby('material')
 
-  for material, group in grouped:
+  for material, group in groups:
 
     # Format the model column by passing each value to the formatString function
     group['model'] = group['model'].apply(formatString)
 
     # save the group to a csv file
-    group.to_csv(os.path.join('results', 'classification', f'best-{material}.csv'), index=False)
+    save_dir = os.path.join('results', 'classification', 'best')
+    os.makedirs(save_dir, exist_ok=True)
+    group.to_csv(os.path.join(save_dir, f'best-{material}.csv'), index=False)
 
   fontSize = 20
 
@@ -88,9 +82,11 @@ def plotBestClassification():
 
   plt.figure(figsize=(10, 7))
   sns.barplot(data=df_best, x='model', y='Accuracy', hue='numSamples')
-  plt.title(f'Best Classification Results for each Model', fontsize=fontSize+4)
-  plt.ylabel('Accuracy', fontsize=fontSize+2)
-  plt.xlabel('Model', fontsize=fontSize+2)
+  plt.title(
+      f'Best Classification Results for each Model',
+      fontsize=fontSize + 4)
+  plt.ylabel('Accuracy', fontsize=fontSize + 2)
+  plt.xlabel('Model', fontsize=fontSize + 2)
   plt.gca().set_ylim([0.6, 1.0])
   plt.yticks(fontsize=fontSize)
   plt.gca().set_xticklabels(
@@ -101,45 +97,11 @@ def plotBestClassification():
 
   plt.savefig(os.path.join('images', 'graphs', f'best.png'))
 
-  plt.show()
+  if verbose:
+    plt.show()
 
   plt.close()
 
 
-def formatString(string: str) -> str:
-  """
-  Formats a string to be more readable.
-
-  Args:
-      string (str): The string to format.
-
-  Returns:
-      str: The formatted string.
-  """
-
-  if string == 'iron':
-    string = 'aluminum'
-
-  # if there is a captial letter in the string that is not the first letter
-  # add a space before it
-  modelInitials = {
-    'DecisionTree': 'DT',
-    'KNearestNeighbors': 'KNN',
-    'NearestCentroid': 'NC',
-    'NeuralNetwork': 'NN',
-    'RandomForest': 'RF',
-    'StochasticGradientDescent': 'SGD',
-    'SupportVectorMachine': 'SVM'
-  }
-  if string in modelInitials.keys():
-    return modelInitials[string]
-
-
-  for i in range(1, len(string)):
-    if string[i].isupper() and string[i - 1] != ' ':
-      string = string[:i] + ' ' + string[i:]
-  return string.replace('_', ' ').title()
-
 if __name__ == '__main__':
   plotBestClassification()
-
