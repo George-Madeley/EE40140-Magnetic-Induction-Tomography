@@ -105,15 +105,7 @@ class IGeneration(IModel):
       testLosses = self.test(testLoader, metrics)
 
       print(f'Epoch: {epoch} Loss: {loss}')
-      if epoch == 0:
-        fixedSignalSamples = validLoader.dataset.tensors[1][fixedIndeces].to(self.device)
-      fixedGeneratedImages = self.predict(fixedSignalSamples)
-      self.plotImages(
-        imgDir,
-        fixedGeneratedImages,
-        f'epoch_{str(epoch).zfill(3)}.png',
-        subtitle=f'Epoch {epoch}'
-      )
+      self.plotFixedImages(fixedIndeces, validLoader, fixedRealImages, imgDir, epoch)
       
 
       df_newRow = DataFrame({
@@ -130,6 +122,24 @@ class IGeneration(IModel):
       df_results.to_csv(resultsPath, index=False)
 
     self.validate(metrics, validLoader, uniqueID)
+
+  def plotFixedImages(self, fixedIndeces, validLoader, fixedRealImages, imgDir, epoch):
+      fixedSignalSamples = validLoader.dataset.tensors[1][fixedIndeces].to(self.device)
+      fixedGeneratedImages = self.predict(fixedSignalSamples)
+      fixedErrorImages = self.calculatePerPixelLoss(fixedRealImages, fixedGeneratedImages)
+      self.plotImages(
+        imgDir,
+        fixedGeneratedImages,
+        f'epoch_{str(epoch).zfill(3)}.png',
+        subtitle=f'Epoch {epoch}'
+      )
+      self.plotImages(
+        imgDir,
+        fixedErrorImages,
+        f'error_epoch_{str(epoch).zfill(3)}.png',
+        subtitle=f'Error Epoch {epoch}',
+        palette='viridis'
+      )
 
   def validate(self, metrics, validLoader, uniqueID):
     df_val_results = DataFrame()
@@ -207,11 +217,10 @@ class IGeneration(IModel):
       roundActual[roundActual == 0.01] = 0
       roundActual[roundActual == 0.99] = 1
 
-      actual = actual.to(self.device)
       predicted = predicted.to(self.device)
 
       # Calculate the absolute difference between the actual and predicted values
-      absDiff = torch.abs(actual - predicted)
+      absDiff = torch.abs(roundActual - predicted)
 
       # White MAE loss is the mean of the absolute difference between the actual
       # and predicted values for the pixels that are 0.99 (1 in the rounded
@@ -288,17 +297,26 @@ class IGeneration(IModel):
     MAELoss = nn.functional.l1_loss(predicted, actual).item()
     if 'MAE' in scoring: newScoring['MAE'] += MAELoss
 
-    # SSIM loss
-    def eval_step(engine, batch):
-      return batch
+    if runPerPixelLoss: 
+      # SSIM loss
+      def eval_step(engine, batch):
+        return batch
 
-    default_evaluator = Engine(eval_step)
+      default_evaluator = Engine(eval_step)
 
-    ssim = SSIM(data_range=1.0)
-    ssim.attach(default_evaluator, 'SSIM')
-    state = default_evaluator.run([[predicted, actual]])
-    SSIMLoss = state.metrics['SSIM']
-    if 'SSIM' in scoring: newScoring['SSIM'] += SSIMLoss
+      ssim = SSIM(data_range=1.0)
+      ssim.attach(default_evaluator, 'SSIM')
+
+      if len(predicted.shape) == 3:
+        predicted = predicted.unsqueeze(0)
+
+      if len(actual.shape) == 3:
+        actual = actual.unsqueeze(0)
+
+
+      state = default_evaluator.run([[predicted, actual]])
+      SSIMLoss = state.metrics['SSIM']
+      if 'SSIM' in scoring: newScoring['SSIM'] += SSIMLoss
 
     return newScoring
   
@@ -330,13 +348,41 @@ class IGeneration(IModel):
 
     return newScoring
   
+  def calculatePerPixelLoss(self, actual, predicted):
+    """
+    Calculate the per pixel loss.
+
+    Args:
+      actual: The actual values.
+      predicted: The predicted values.
+
+    Returns:
+      dict: The per pixel loss.
+    """
+    # the actual images are made up of 0.01 and 0.99 values. Replace the 0.01
+    # values with 0 and the 0.99 values with 1
+    roundActual = actual.clone()
+    roundActual[roundActual == 0.01] = 1
+    roundActual[roundActual == 0.99] = 0
+
+    roundPredicted = predicted.clone()
+    roundPredicted = 1 - roundPredicted
+
+    # Calculate the absolute difference between the actual and predicted values
+    diff = roundActual - roundPredicted
+
+    diff = (diff - diff.min()) / (diff.max() - diff.min())
+
+    return diff
+  
   def plotImages(
     self,
     imgDir: str,
     fixedImageSamples,
     fileName: str,
     subtitle: str,
-    labels: list[str] = None
+    labels: list[str] = None,
+    palette: str = 'gray'
   ):
     """
     Plot and save a grid of images.
@@ -361,7 +407,7 @@ class IGeneration(IModel):
       image = fixedImageSamples[i][0]
       # crop the image to a square at the center
       image = image[:, imgMargin:imgMargin + imgH]
-      ax.imshow(image, cmap='gray', vmin=0, vmax=1)
+      ax.imshow(image, cmap=palette, vmin=0, vmax=1)
       ax.axis('off')
 
     if labels is None:

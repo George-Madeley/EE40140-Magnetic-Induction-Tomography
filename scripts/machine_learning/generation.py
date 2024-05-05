@@ -98,6 +98,10 @@ def runModels():
       'discriminator': [2, 6, 2],
       'generator': [2, 6, 2]
     },
+    'DCGAN5': {
+      'discriminator': [16, 32, 16],
+      'generator': [16, 32, 16]
+    },
   }
 
   VAEs = {
@@ -151,30 +155,19 @@ def runModels():
     'downScaleFactor': 32,
     'batchSize': batchSize,
     'learningRate': 0.0001,
-    'maxEpoch': 1000,
+    'maxEpoch': 2,
     'perPixelLoss': True,
     'oneHotEncode': True,
   }
 
-  models = []
+  name, structure = list(NNs.items())[0]
 
-  models += [
+  models = [
     NN(
       structure=structure,
       name=name,
-      conv=True, 
       **defaultArgs
-    ) for name, structure in CNNs.items()
-  ]
-
-  models += [
-    GAN(
-      structure=structure,
-      name=name,
-      convD=True,
-      convG=True,
-      **defaultArgs
-    ) for name, structure in DCGANs.items()
+    )
   ]
 
   for model in models:
