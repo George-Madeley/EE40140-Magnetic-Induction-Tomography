@@ -47,7 +47,7 @@ def formatString(string: str) -> str:
 
 
 def formatMetricName(string):
-  metricNames = ['BCELogits', 'BCE', 'MSE', 'MAE']
+  metricNames = ['BCELogits', 'BCE', 'MSE', 'MAE', 'SSIM']
 
   for name in metricNames:
     if name in string:

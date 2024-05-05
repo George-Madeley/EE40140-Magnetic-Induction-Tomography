@@ -11,9 +11,8 @@ def plotBestModelVersions(
     verbose: bool = False
 ):
   models = {
-    'NN': 'ANN',
-    'GAN': 'G',
-    'VAE': 'VAE'
+    'CNN': 'N',
+    'DCGAN': 'G'
   }
 
   directory = os.path.join('results', 'generation', material)
