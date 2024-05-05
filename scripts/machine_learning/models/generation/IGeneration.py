@@ -179,8 +179,10 @@ class IGeneration(IModel):
         imgDir,
         fixedErrorImages,
         f'error_epoch_{str(epoch).zfill(3)}.png',
-        subtitle=f'Error Epoch {epoch}',
-        palette='viridis'
+        subtitle=f'Error at Epoch {epoch}',
+        palette='viridis',
+        colorBar=True,
+        colorRange=(-1, 1)
       )
 
   def validate(self, metrics, validLoader, uniqueID):
@@ -413,8 +415,6 @@ class IGeneration(IModel):
     # Calculate the absolute difference between the actual and predicted values
     diff = roundActual - roundPredicted
 
-    diff = (diff - diff.min()) / (diff.max() - diff.min())
-
     return diff
   
   def plotImages(
@@ -424,7 +424,9 @@ class IGeneration(IModel):
     fileName: str,
     subtitle: str,
     labels: list[str] = None,
-    palette: str = 'gray'
+    palette: str = 'gray',
+    colorBar: bool = False,
+    colorRange: tuple = (0, 1)
   ):
     """
     Plot and save a grid of images.
@@ -439,23 +441,38 @@ class IGeneration(IModel):
       None
     """
     numRows = len(fixedImageSamples) // 2
-    fig, axs = plt.subplots(numRows, 2, figsize=(8, 16))
+    fig, axs = plt.subplots(numRows, 2, figsize=(8, 14))
 
     imgH = fixedImageSamples.shape[2]
     imgW = fixedImageSamples.shape[3]
     imgMargin = (imgW - imgH) // 2
 
+    fixedImageSamples = fixedImageSamples.clone()
+    fixedImageSamples = fixedImageSamples[:, :, :, imgMargin:imgMargin + imgH]
+
     for i, ax in enumerate(axs.flatten()):
       image = fixedImageSamples[i][0]
-      # crop the image to a square at the center
-      image = image[:, imgMargin:imgMargin + imgH]
-      ax.imshow(image, cmap=palette, vmin=0, vmax=1)
+      ax.imshow(image, cmap=palette, vmin=colorRange[0], vmax=colorRange[1])
       ax.axis('off')
 
     if labels is None:
       labels = [f'({chr(97 + i)})' for i in range(len(fixedImageSamples))]
     for i, ax in enumerate(axs.flatten()):
       ax.set_title(labels[i], fontsize=18)
+
+    if colorBar:
+      # Add a color bar to the bottom of the plot if colorBar is True
+      fig.subplots_adjust(bottom=0.2)
+      cbar_ax = fig.add_axes([0.15, 0.1, 0.7, 0.02])
+      cbar = fig.colorbar(
+        axs[0, 0].imshow(fixedImageSamples[0][0], cmap=palette, vmin=colorRange[0], vmax=colorRange[1]), 
+        cax=cbar_ax,
+        orientation='horizontal',
+        ticks=[colorRange[0], 0, colorRange[1]],
+        label='Error',
+      )
+      cbar.ax.tick_params(labelsize=18)
+      cbar.ax.set_xlabel('Error', fontsize=18)
 
     # title the plot
     plt.suptitle(subtitle, fontsize=20)
