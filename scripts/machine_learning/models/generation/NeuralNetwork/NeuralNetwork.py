@@ -15,7 +15,7 @@ class NeuralNetwork(IGeneration):
     else:
       ArtificialNeuralNetwork = FeedforwardNeuralNetwork
 
-    self.network = ArtificialNeuralNetwork(
+    self.model = ArtificialNeuralNetwork(
       inputSize= 240 if self.noise else 120,
       width=640 // self.downScaleFactor,
       height=480 // self.downScaleFactor,
@@ -23,7 +23,7 @@ class NeuralNetwork(IGeneration):
     ).to(self.device)
 
     self.optimizer = Adam(
-      self.network.parameters(),
+      self.model.parameters(),
       lr=self.learningRate,
     )
 
@@ -50,7 +50,7 @@ class NeuralNetwork(IGeneration):
       self.optimizer.zero_grad()
 
       # Generate the fake samples
-      generatedImageSamples = self.network(signalSamples)
+      generatedImageSamples = self.model(signalSamples)
 
       losses = super().score(metrics, realImageSamples, generatedImageSamples, signalLabels)
 
@@ -75,7 +75,7 @@ class NeuralNetwork(IGeneration):
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
-      generatedImageSamples = self.network(signalSamples)
+      generatedImageSamples = self.model(signalSamples)
 
       losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
     
@@ -83,6 +83,6 @@ class NeuralNetwork(IGeneration):
     return losses
   
   def predict(self, signalSample) -> None:
-    generatedImage = self.network(signalSample)
+    generatedImage = self.model(signalSample)
     generatedImage = generatedImage.detach().cpu()
     return generatedImage

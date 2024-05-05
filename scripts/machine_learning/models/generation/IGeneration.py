@@ -36,6 +36,9 @@ class IGeneration(IModel):
     self.learningRate = kwargs.get('learningRate', 0.0001)
     self.maxEpoch = kwargs.get('maxEpoch', 100)
 
+    self.loadFile = kwargs.get('loadFile', None)
+    self.toSave = kwargs.get('toSave', False)
+
     self.name = kwargs.get("name", self.__class__.__name__)
 
     self.device = ""
@@ -44,6 +47,37 @@ class IGeneration(IModel):
     else:
       self.device = torch.device("cpu")
     print(f"Device: {self.device}")
+
+  def saveModel(self, uniqueID: str) -> None:
+    """
+    Save the model to the specified path.
+
+    Args:
+      path (str): The path to save the model.
+
+    Returns:
+      None
+    """
+    model_save_dir = os.path.join('models')
+    os.makedirs(model_save_dir, exist_ok=True)
+    save_path = os.path.join(model_save_dir, f'{self.name} - {uniqueID}.pt')
+    torch.save(self.model.state_dict(), save_path)
+
+  def loadModel(self) -> None:
+    """
+    Load the model from the specified path.
+
+    Args:
+      path (str): The path to load the model from.
+
+    Returns:
+      None
+    """
+    if self.loadFile:
+      if self.name not in self.loadFile:
+        raise FileExistsError(f'The load file provided {self.loadFile} does not match the model {self.name}')
+      load_path = os.path.join('models', f'{self.loadFile}.pt')
+      self.model.load_state_dict(torch.load(load_path))
   
   def run(
     self,
@@ -99,6 +133,10 @@ class IGeneration(IModel):
     os.makedirs(imgDir, exist_ok=True)
     self.plotImages(imgDir, fixedRealImages, 'original.png', subtitle='Original Images')
 
+    self.loadModel()
+
+    min_loss = np.infty
+
     for epoch in range(self.maxEpoch):
 
       loss, trainLosses = self.train(trainLoader, metrics)
@@ -120,6 +158,10 @@ class IGeneration(IModel):
       }, index=[0])
       df_results = concat([df_results, df_newRow], axis=0)
       df_results.to_csv(resultsPath, index=False)
+      
+      if loss < min_loss and self.toSave:
+        min_loss = loss
+        self.saveModel(uniqueID)
 
     self.validate(metrics, validLoader, uniqueID)
 

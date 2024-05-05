@@ -9,7 +9,7 @@ class ResidualNeuralNetwork(IGeneration):
   def __init__(self, structure, **kwargs,):
     super().__init__(**kwargs)
 
-    self.network = ResNet(
+    self.model = ResNet(
       inputSize= 240 if self.noise else 120,
       width=640 // self.downScaleFactor,
       height=480 // self.downScaleFactor,
@@ -17,7 +17,7 @@ class ResidualNeuralNetwork(IGeneration):
     ).to(self.device)
 
     self.optimizer = Adam(
-      self.network.parameters(),
+      self.model.parameters(),
       lr=self.learningRate,
     )
 
@@ -44,7 +44,7 @@ class ResidualNeuralNetwork(IGeneration):
       self.optimizer.zero_grad()
 
       # Generate the fake samples
-      generatedImageSamples = self.network(signalSamples)
+      generatedImageSamples = self.model(signalSamples)
 
       losses = super().score(metrics, realImageSamples, generatedImageSamples, signalLabels)
 
@@ -69,7 +69,7 @@ class ResidualNeuralNetwork(IGeneration):
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
-      generatedImageSamples = self.network(signalSamples)
+      generatedImageSamples = self.model(signalSamples)
 
       losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
     
@@ -77,6 +77,6 @@ class ResidualNeuralNetwork(IGeneration):
     return losses
   
   def predict(self, signalSamples) -> None:
-    generatedImages = self.network(signalSamples)
+    generatedImages = self.model(signalSamples)
     generatedImages = generatedImages.detach().cpu()
     return generatedImages

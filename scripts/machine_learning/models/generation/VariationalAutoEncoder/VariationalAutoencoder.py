@@ -1,3 +1,4 @@
+import os
 from pandas import DataFrame
 import torch
 
@@ -91,3 +92,27 @@ class VariationalAutoencoder(IGeneration):
     generatedImages = self.decoder(latentSamples)
     generatedImages = generatedImages.detach().cpu()
     return generatedImages
+
+  def saveModel(self, uniqueID: str) -> None:
+    model_save_dir = os.path.join('models')
+    os.makedirs(model_save_dir, exist_ok=True)
+
+    save_path = os.path.join(model_save_dir, f'{self.name} E - {uniqueID}.pt')
+    torch.save(self.encoder.state_dict(), save_path)
+
+    save_path = os.path.join(model_save_dir, f'{self.name} D - {uniqueID}.pt')
+    torch.save(self.decoder.state_dict(), save_path)
+
+  def loadModel(self) -> None:
+    if self.loadFile:
+
+      for loadFile in self.loadFile:
+      
+        if f'{self.name} E' in loadFile:
+          load_path = os.path.join('models', f'{loadFile}.pt')
+          self.encoder.load_state_dict(torch.load(load_path))
+        elif f'{self.name} D' in loadFile:
+          load_path = os.path.join('models', f'{loadFile}.pt')
+          self.decoder.load_state_dict(torch.load(load_path))
+        else:
+          raise FileExistsError(f'The load file provided {loadFile} does not match the model {self.name}')

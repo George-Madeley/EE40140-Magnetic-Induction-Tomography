@@ -1,3 +1,4 @@
+import os
 import torch
 from torch import nn
 from torch.optim import Adam
@@ -114,10 +115,7 @@ class GenerativeAdversarialNetwork(IGeneration):
     discriminatorLosses = {f'D {k}': v / trainLoaderLen for k, v in discriminatorLosses.items()}
     generatorLosses = {f'G {k}': v / trainLoaderLen for k, v in generatorLosses.items()}
 
-    loss = {
-      'D Loss': lossDiscriminator.item(),
-      'G Loss': lossGenerator.item()
-    }
+    loss = lossGenerator.item()
 
     losses = {
       **discriminatorLosses,
@@ -185,3 +183,27 @@ class GenerativeAdversarialNetwork(IGeneration):
     generatedImages = self.generator(signalSamples)
     generatedImages = generatedImages.detach().cpu()
     return generatedImages
+
+  def saveModel(self, uniqueID: str) -> None:
+    model_save_dir = os.path.join('models')
+    os.makedirs(model_save_dir, exist_ok=True)
+
+    save_path = os.path.join(model_save_dir, f'{self.name} G - {uniqueID}.pt')
+    torch.save(self.generator.state_dict(), save_path)
+
+    save_path = os.path.join(model_save_dir, f'{self.name} D - {uniqueID}.pt')
+    torch.save(self.discriminator.state_dict(), save_path)
+
+  def loadModel(self) -> None:
+    if self.loadFile:
+
+      for loadFile in self.loadFile:
+      
+        if f'{self.name} G' in loadFile:
+          load_path = os.path.join('models', f'{loadFile}.pt')
+          self.generator.load_state_dict(torch.load(load_path))
+        elif f'{self.name} D' in loadFile:
+          load_path = os.path.join('models', f'{loadFile}.pt')
+          self.discriminator.load_state_dict(torch.load(load_path))
+        else:
+          raise FileExistsError(f'The load file provided {loadFile} does not match the model {self.name}')

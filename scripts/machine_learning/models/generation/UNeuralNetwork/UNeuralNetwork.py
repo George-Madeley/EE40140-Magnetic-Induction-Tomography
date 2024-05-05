@@ -9,7 +9,7 @@ class UNeuralNetwork(IGeneration):
   def __init__(self, structure, **kwargs):
     super().__init__(**kwargs)
 
-    self.unet = UNet(
+    self.model = UNet(
       240 if self.noise else 120,
       640 // self.downScaleFactor,
       480 // self.downScaleFactor,
@@ -17,7 +17,7 @@ class UNeuralNetwork(IGeneration):
     ).to(self.device)
 
     self.optimizerUNet = torch.optim.Adam(
-      self.unet.parameters(),
+      self.model.parameters(),
       lr=self.learningRate
     )
 
@@ -39,7 +39,7 @@ class UNeuralNetwork(IGeneration):
 
       self.optimizerUNet.zero_grad()
 
-      generatedImageSamples = self.unet(signalSamples)
+      generatedImageSamples = self.model(signalSamples)
 
       loss = self.uLossFunc(realImagesSamples, generatedImageSamples)
       loss.backward()
@@ -73,7 +73,7 @@ class UNeuralNetwork(IGeneration):
       signalSamples = signalSamples.to(self.device)
       realImagesSamples = realImagesSamples.to(self.device)
 
-      generatedImageSamples = self.unet(signalSamples)
+      generatedImageSamples = self.model(signalSamples)
 
       losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
     
@@ -88,6 +88,6 @@ class UNeuralNetwork(IGeneration):
 
     :return: predictions
     """
-    generatedImages = self.unet(signalSamples)
+    generatedImages = self.model(signalSamples)
     generatedImages = generatedImages.detach().cpu()
     return generatedImages

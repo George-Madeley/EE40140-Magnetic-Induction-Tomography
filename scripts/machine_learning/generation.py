@@ -152,20 +152,30 @@ def runModels():
   defaultArgs = {
     'labelName': labelName,
     'noise': True,
-    'downScaleFactor': 32,
+    'downScaleFactor': 8,
     'batchSize': batchSize,
     'learningRate': 0.0001,
-    'maxEpoch': 2,
+    'maxEpoch': 150,
     'perPixelLoss': True,
     'oneHotEncode': True,
   }
 
-  name, structure = list(NNs.items())[0]
+  name, structure = list(GANs.items())[-1]
 
   models = [
-    NN(
+    # NN(
+    #   structure=structure,
+    #   name=name,
+    #   loadFile='NN7 - fSOIniOHQz',
+    #   **defaultArgs
+    # )
+    GAN(
       structure=structure,
       name=name,
+      loadFile=[
+        'GAN7 D - MaYbCeMMmV',
+        'GAN7 G - MaYbCeMMmV'
+      ],
       **defaultArgs
     )
   ]
