@@ -8,11 +8,17 @@ import os
 
 def plotBestModelVersions(
     material: str = 'aluminium',
+    epoch_limit: int = 1000,
     verbose: bool = False
 ):
   models = {
     'CNN': 'N',
-    'DCGAN': 'G'
+    'DCGAN': 'G',
+    'GAN': 'G',
+    'NN': 'N',
+    'VAE': 'VAE',
+    'UNN': 'UNET',
+    'ResNet': 'ResNet',
   }
 
   directory = os.path.join('results', 'generation', material)
@@ -31,6 +37,9 @@ def plotBestModelVersions(
 
       model_df['Model Name'] = model_id
 
+      # Limit the number of epochs to the epoch limit
+      model_df = model_df[model_df['Epoch'] <= epoch_limit]
+
       # Find the records in each group with the min metric
       model_df = model_df[model_df[metric] == model_df[metric].min()]
       model_df = model_df.reset_index(drop=True)
@@ -41,7 +50,13 @@ def plotBestModelVersions(
 
     # replace all the columns with 'test' in the name with ''
     df.columns = df.columns.str.replace('test ', '')
-    df.columns = df.columns.str.replace(f'{sub_model} ', '')
+    if sub_model != 'N':
+      df.columns = df.columns.str.replace(f'{sub_model} ', '')
+    else:
+      # find the columns that start with 'N '
+      for c in df.columns:
+        if c.startswith('N '):
+          df = df.rename(columns={c: c[2:]})
 
     # format all the column names
     df.columns = [formatString(col) for col in df.columns]
@@ -78,4 +93,4 @@ def plotBestModelVersions(
 
 
 if __name__ == '__main__':
-  plotBestModelVersions()
+  plotBestModelVersions(epoch_limit=500, material='copper')
