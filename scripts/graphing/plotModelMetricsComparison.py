@@ -116,7 +116,7 @@ def plotModelMetricsComparison(
         f'{formatString(metric)} Comparison for Classification Models',
         fontsize=font_size + 4)
 
-    save_dir = os.path.join('images', 'graphs', 'comparison')
+    save_dir = os.path.join('images', 'graphs', 'metric comparison')
     os.makedirs(save_dir, exist_ok=True)
     filepath = os.path.join(save_dir, f'Comparison - {formatString(metric)} - Barchart.png')
     plt.savefig(filepath)

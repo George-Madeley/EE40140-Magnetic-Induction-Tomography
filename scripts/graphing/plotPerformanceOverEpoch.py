@@ -96,7 +96,7 @@ def plotPerformanceOverEpoch(
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))  # Add this line to use scientific notation on the y-axis
     plt.tight_layout()
 
-    saveDir = os.path.join('images', 'graphs', 'performance', model, metric)
+    saveDir = os.path.join('images', 'graphs', 'performance over epoch', model, metric)
     os.makedirs(saveDir, exist_ok=True)
     plt.savefig(os.path.join(saveDir, f'{modelVersion} {modelId} - {metric}.png'))
     

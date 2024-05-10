@@ -36,7 +36,8 @@ def plotRuntimes(verbose: bool = False):
     plt.xlim(0)
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
-    plt.savefig(os.path.join(directory, f'{time_column}.png'))
+    save_path = os.path.join('images', 'graphs', 'runtimes')
+    plt.savefig(os.path.join(save_path, f'{time_column}.png'))
 
     if verbose:
       plt.show()

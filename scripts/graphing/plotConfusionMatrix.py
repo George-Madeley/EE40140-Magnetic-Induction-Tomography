@@ -25,7 +25,7 @@ def plot_confusion_matrix(
     if verbose:
       plt.show()
 
-    save_path = os.path.join('images', 'graphs', 'ConfusionMatrics')
+    save_path = os.path.join('images', 'graphs', 'confusion matrix')
     os.makedirs(save_path, exist_ok=True)
     plt.savefig(os.path.join(save_path, filename.replace('.csv', '.png')))
     plt.close()

@@ -31,8 +31,9 @@ def plotSampleNum(
   plt.legend()
   
   # Save the plot to a file
-  save_path = os.path.join('images', 'graphs', 'sample - counts.png')
-  plt.savefig(save_path, dpi=300, bbox_inches='tight')
+  save_path = os.path.join('images', 'graphs', 'sample counts')
+  os.makedirs(save_path, exist_ok=True)
+  plt.savefig(os.path.join(save_path, 'sample_counts.png'), dpi=300, bbox_inches='tight')
 
   if verbose:
     plt.show()

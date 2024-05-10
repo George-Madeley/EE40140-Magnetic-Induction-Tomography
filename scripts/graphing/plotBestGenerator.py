@@ -50,7 +50,7 @@ def plotBestGenerator(
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
 
-    save_path = os.path.join('images', 'graphs', 'best_generator')
+    save_path = os.path.join('images', 'graphs', 'best generator')
     os.makedirs(save_path, exist_ok=True)
     plt.savefig(os.path.join(save_path, f'{metric}.png'))
     if verbose:

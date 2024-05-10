@@ -44,8 +44,9 @@ def plotShapeNum():
   plt.legend()
   
   # Save the plot to a file
-  save_path = os.path.join('images', 'graphs', 'shape - counts.png')
-  plt.savefig(save_path, dpi=300, bbox_inches='tight')
+  save_path = os.path.join('images', 'graphs', 'shape counts')
+  os.makedirs(save_path, exist_ok=True)
+  plt.savefig(os.path.join(save_path, 'shape - counts.png'), dpi=300, bbox_inches='tight')
   plt.close()
 
 if __name__ == '__main__':

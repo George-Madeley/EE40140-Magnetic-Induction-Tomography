@@ -6,7 +6,7 @@ from utils import formatString
 
 import os
 
-def plotBestModelVersions(
+def plotBestGeneratorVersions(
     material: str = 'aluminium',
     epoch_limit: int = 1000,
     verbose: bool = False
@@ -81,7 +81,7 @@ def plotBestModelVersions(
     plt.title(f'{model} MAE Loss for {material} Models', fontsize=20)
     plt.tight_layout()
 
-    save_dir = os.path.join('images', 'graphs', 'best-model-versions')
+    save_dir = os.path.join('images', 'graphs', 'best generator versions')
     os.makedirs(save_dir, exist_ok=True)
     savepath = os.path.join(save_dir, f'{model} {material} - best.png')
     plt.savefig(savepath)
@@ -93,4 +93,4 @@ def plotBestModelVersions(
 
 
 if __name__ == '__main__':
-  plotBestModelVersions(epoch_limit=500, material='copper')
+  plotBestGeneratorVersions(epoch_limit=500, material='copper')

@@ -95,7 +95,9 @@ def plotBestClassification(
   )
   plt.legend(title='Number of Samples', loc='lower right')
 
-  plt.savefig(os.path.join('images', 'graphs', f'best.png'))
+  save_path = os.path.join('images', 'graphs', 'best classification')
+  os.makedirs(save_path, exist_ok=True)
+  plt.savefig(os.path.join(save_path, f'best.png'))
 
   if verbose:
     plt.show()

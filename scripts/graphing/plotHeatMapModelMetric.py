@@ -89,7 +89,7 @@ def meanColorMetrics(verbose, df, material):
   plt.yticks(rotation=0)
   plt.tight_layout()
 
-  save_path = os.path.join('images', 'graphs', 'heatmap')
+  save_path = os.path.join('images', 'graphs', 'heatmap model metric')
   os.makedirs(save_path, exist_ok=True)
   plt.savefig(os.path.join(save_path, f'{material} - MAE Heatmap.png'))
 

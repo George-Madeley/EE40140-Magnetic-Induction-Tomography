@@ -49,7 +49,7 @@ def plot_before_and_after(
     if verbose:
       plt.show()
 
-    save_path = os.path.join('images', 'graphs', 'BeforeAndAfter')
+    save_path = os.path.join('images', 'graphs', 'before and after')
     os.makedirs(save_path, exist_ok=True)
     plt.savefig(os.path.join(save_path, f'{sample}.png'))
 
