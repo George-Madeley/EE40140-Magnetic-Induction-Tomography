@@ -28,7 +28,14 @@ def plotSignal(
   signal = record[cc_columns].values
 
   # plot the signal
+  plt.figure(figsize=(8, 6))
   plt.plot(signal)
+  plt.title(f'Recorded Voltage Differences from Index: {idx}', fontsize=20)
+  plt.xlabel('Coil Combianation', fontsize=18)
+  plt.ylabel('Voltage Difference (V)', fontsize=18)
+  plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+  plt.xticks(fontsize=16)
+  plt.yticks(fontsize=16)
 
   save_path = os.path.join('images', 'graphs', 'signals')
   os.makedirs(save_path, exist_ok=True)
