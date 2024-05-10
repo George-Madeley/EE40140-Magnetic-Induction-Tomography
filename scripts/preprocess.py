@@ -11,7 +11,9 @@ from preprocessing.filters import colourFiltering, morphologicalFiltering
 from preprocessing.utils import getCommonFactors, getImage
 
 
-def preprocessAllImages() -> None:
+def preprocessAllImages(
+    toImagePreprocess: bool = False
+) -> None:
   """
   Preprocesses all images in the dataset.
 
@@ -29,38 +31,45 @@ def preprocessAllImages() -> None:
 
   df = cleanUp.cleanUp()
 
-  print("Preprocessing Images...")
-  for i, row in df.iterrows():
-    # Get the filename
-    bb_filename: str = row['bb_filename']
-    cc_filename: str = row['cc_filename']
-    cutoff: float = row['cutoff']
-    sample: str = row['sample']
+  if toImagePreprocess:
+    print("Preprocessing Images...")
+    for i, row in df.iterrows():
+      # Get the filename
+      bb_filename: str = row['bb_filename']
+      cc_filename: str = row['cc_filename']
+      cutoff: float = row['cutoff']
+      sample: str = row['sample']
 
-    imageWidth: int = 640
-    imageHeight: int = 480
-    commonFactors: List[int] = getCommonFactors(imageWidth, imageHeight)
+      imageWidth: int = 640
+      imageHeight: int = 480
+      commonFactors: List[int] = getCommonFactors(imageWidth, imageHeight)
 
-    # Preprocess the image
-    Preprocess( bb_filename, cc_filename, sample, commonFactors, cutoff=cutoff)
+      # Preprocess the image
+      PreprocessImage( bb_filename, cc_filename, sample, commonFactors, cutoff=cutoff)
 
   df = formatting.normalise(df)
 
   material_dfs = formatting.splitDataframeMaterial(df)
 
-  for idx, material_df in enumerate(material_dfs):
-    material = 'iron' if idx == 0 else 'copper'
-    feature = 'shape' if idx == 0 else 'sample'
-    material_df = formatting.getEvenDistribution(
-      material_df, distFeature=feature)
-    material_df = formatting.splitDataframeFeature(material_df, feature)
+  for material_tuple in material_dfs:
+    material, material_df = material_tuple
+    feature = 'shape' if material == 'iron' else 'sample'
+
+    if material != 'unknown':
+      material_df = formatting.getEvenDistribution(
+        material_df, distFeature=feature)
+      material_df = formatting.splitDataframeFeature(material_df, feature)
+    else:
+      # shuffle the unknown samples
+      material_df = material_df.sample(frac=1).reset_index(drop=True)
+    
     material_df = formatting.oneHotEncode(material_df, feature)
     material_df.to_csv(f'./data/data_samples_{material}.csv', index=False)
 
   print('Preprocessing complete.')
 
 
-def Preprocess(
+def PreprocessImage(
   bb_filename: str,
   cc_filename: str,
   sample: str,
@@ -84,6 +93,23 @@ def Preprocess(
   Returns:
       None
   """
+
+  isImageProcessed: bool = True
+  for factor in commonFactors:
+    newWidth: int = imageWidth // factor
+    newHeight: int = imageHeight // factor
+    directory: str = os.path.join(
+        'images',
+        'processed',
+        f'{newHeight}x{newWidth}')
+    os.makedirs(directory, exist_ok=True)
+    savePath: str = os.path.join(directory, cc_filename)
+    if not os.path.exists(savePath):
+      isImageProcessed = False
+      break
+
+  if isImageProcessed:
+    return
 
   image = getImage(cc_filename, commonFactors, imageWidth, imageHeight)
   if image is None: return
@@ -124,7 +150,9 @@ def Preprocess(
 
 
 if __name__ == '__main__':
-  preprocessAllImages()
+  preprocessAllImages(
+    toImagePreprocess=True
+  )
 
 
 

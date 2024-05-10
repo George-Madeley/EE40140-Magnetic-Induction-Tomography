@@ -30,11 +30,13 @@ def getDataframe() -> pd.DataFrame:
 
   dfFilepath = os.path.join('data','data_samples.csv')
   if not os.path.exists(dfFilepath):
-    samples = ['0', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
+    files = os.listdir('data')
+    files = [file for file in files if file.startswith('data_sample-')]
     df = pd.DataFrame()
-    for sample in samples:
+    for file in files:
+      sample = file.split('-')[1].split('.')[0]
       print(f"Reading data_sample-{sample}.csv")
-      df = pd.concat([df, pd.read_csv(os.path.join('data', f'data_sample-{sample}.csv'))])
+      df = pd.concat([df, pd.read_csv(os.path.join('data', file))])
 
     print(f"Combined dataframe has {len(df)} rows")
     # Save the combined dataframe to a new csv file

@@ -141,6 +141,12 @@ def splitDataframeMaterial(df: DataFrame) -> tuple[DataFrame, DataFrame]:
   empty_df = df[df['sample'] == '0']
   iron_df = df[df['sample'] < 'H']
   copper_df = df[df['sample'] >= 'H']
+  copper_df = copper_df[copper_df['sample'] < 'O']
   copper_df = concat([copper_df, empty_df])
+  unknown_df = df[df['sample'] >= 'O']
 
-  return iron_df, copper_df
+  return (
+    ('iron', iron_df), 
+    ('copper', copper_df),
+    ('unknown', unknown_df)
+  )
