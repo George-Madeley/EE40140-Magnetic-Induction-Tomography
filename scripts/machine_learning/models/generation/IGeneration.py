@@ -58,10 +58,13 @@ class IGeneration(IModel):
     Returns:
       None
     """
-    model_save_dir = os.path.join('models')
-    os.makedirs(model_save_dir, exist_ok=True)
-    save_path = os.path.join(model_save_dir, f'{self.name} - {uniqueID}.pt')
-    torch.save(self.model.state_dict(), save_path)
+    try:
+      model_save_dir = os.path.join('models')
+      os.makedirs(model_save_dir, exist_ok=True)
+      save_path = os.path.join(model_save_dir, f'{self.name} - {uniqueID}.pt')
+      torch.save(self.model.state_dict(), save_path)
+    except RuntimeError as e:
+      print(f'Error saving model: {e}')
 
   def loadModel(self) -> None:
     """
@@ -408,9 +411,11 @@ class IGeneration(IModel):
     roundActual = actual.clone()
     roundActual[roundActual == 0.01] = 1
     roundActual[roundActual == 0.99] = 0
+    roundActual = roundActual.to(self.device)
 
     roundPredicted = predicted.clone()
     roundPredicted = 1 - roundPredicted
+    roundPredicted = roundPredicted.to(self.device)
 
     # Calculate the absolute difference between the actual and predicted values
     diff = roundActual - roundPredicted
@@ -426,7 +431,8 @@ class IGeneration(IModel):
     labels: list[str] = None,
     palette: str = 'gray',
     colorBar: bool = False,
-    colorRange: tuple = (0, 1)
+    colorRange: tuple = (0, 1),
+    numCols: int = 2
   ):
     """
     Plot and save a grid of images.
@@ -440,8 +446,16 @@ class IGeneration(IModel):
     Returns:
       None
     """
-    numRows = len(fixedImageSamples) // 2
-    fig, axs = plt.subplots(numRows, 2, figsize=(8, 14))
+    # check if fixedImageSamples is a tensor
+    if not torch.is_tensor(fixedImageSamples):
+      # convert numpy array to tensor
+      fixedImageSamples = torch.from_numpy(fixedImageSamples)
+
+    if fixedImageSamples.ndim == 3:
+      fixedImageSamples = fixedImageSamples.unsqueeze(1)
+
+    numRows = len(fixedImageSamples) // numCols
+    fig, axs = plt.subplots(numRows, numCols, figsize=(4 * numCols, 3.75 * numRows))
 
     imgH = fixedImageSamples.shape[2]
     imgW = fixedImageSamples.shape[3]
@@ -450,29 +464,48 @@ class IGeneration(IModel):
     fixedImageSamples = fixedImageSamples.clone()
     fixedImageSamples = fixedImageSamples[:, :, :, imgMargin:imgMargin + imgH]
 
-    for i, ax in enumerate(axs.flatten()):
-      image = fixedImageSamples[i][0]
-      ax.imshow(image, cmap=palette, vmin=colorRange[0], vmax=colorRange[1])
-      ax.axis('off')
 
-    if labels is None:
-      labels = [f'({chr(97 + i)})' for i in range(len(fixedImageSamples))]
-    for i, ax in enumerate(axs.flatten()):
-      ax.set_title(labels[i], fontsize=18)
+    if numRows == 1 and numCols == 1:
+      image = fixedImageSamples[0][0]
+      plt.imshow(image, cmap=palette, vmin=colorRange[0], vmax=colorRange[1])
+      plt.axis('off')
 
-    if colorBar:
-      # Add a color bar to the bottom of the plot if colorBar is True
-      fig.subplots_adjust(bottom=0.2)
-      cbar_ax = fig.add_axes([0.15, 0.1, 0.7, 0.02])
-      cbar = fig.colorbar(
-        axs[0, 0].imshow(fixedImageSamples[0][0], cmap=palette, vmin=colorRange[0], vmax=colorRange[1]), 
-        cax=cbar_ax,
-        orientation='horizontal',
-        ticks=[colorRange[0], 0, colorRange[1]],
-        label='Error',
-      )
-      cbar.ax.tick_params(labelsize=18)
-      cbar.ax.set_xlabel('Error', fontsize=18)
+      if colorBar:
+        cbar = plt.colorbar(
+          plt.imshow(fixedImageSamples[0][0], cmap=palette, vmin=colorRange[0], vmax=colorRange[1]),
+          orientation='horizontal',
+          ticks=[colorRange[0], 0, colorRange[1]],
+          label='Error',
+        )
+        cbar.ax.tick_params(labelsize=18)
+        cbar.ax.set_xlabel('Error', fontsize=18)
+    else:
+      for i, ax in enumerate(axs.flatten()):
+        image = fixedImageSamples[i][0]
+        image = image.cpu()
+        ax.imshow(image, cmap=palette, vmin=colorRange[0], vmax=colorRange[1])
+        ax.axis('off')
+
+      if labels is None:
+        labels = [f'({chr(97 + i)})' for i in range(len(fixedImageSamples))]
+      for i, ax in enumerate(axs.flatten()):
+        ax.set_title(labels[i], fontsize=18)
+
+      if colorBar:
+        # Add a color bar to the bottom of the plot if colorBar is True
+        fig.subplots_adjust(bottom=0.2)
+        cbar_ax = fig.add_axes([0.15, 0.1, 0.7, 0.02])
+        image = fixedImageSamples[0][0]
+        image = image.cpu()
+        cbar = fig.colorbar(
+          axs[0, 0].imshow(image, cmap=palette, vmin=colorRange[0], vmax=colorRange[1]), 
+          cax=cbar_ax,
+          orientation='horizontal',
+          ticks=[colorRange[0], 0, colorRange[1]],
+          label='Error',
+        )
+        cbar.ax.tick_params(labelsize=18)
+        cbar.ax.set_xlabel('Error', fontsize=18)
 
     # title the plot
     plt.suptitle(subtitle, fontsize=20)
