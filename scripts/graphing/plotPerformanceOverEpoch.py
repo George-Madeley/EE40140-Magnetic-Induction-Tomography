@@ -6,12 +6,15 @@ import seaborn as sns
 from utils import formatString, formatMetricName
 
 import os
+import warnings
+warnings.filterwarnings('ignore')
 
 def plotPerformanceOverEpoch(
     material: Literal['copper', 'aluminium'] = 'copper',
     model: Literal['NN', 'GAN', 'VAE'] = 'NN',
     metric: Literal['BCE', 'BCELogits', 'MSE', 'MAE'] = 'BCE',
-    verbose: bool = False
+    verbose: bool = False,
+    epoch_limit: int = 1000
 ):
   directory = os.path.join('results', 'generation', material)
   files = os.listdir(directory)
@@ -26,8 +29,9 @@ def plotPerformanceOverEpoch(
 
     # find the model number
     modelName = data['Model Name'].iloc[0]
-    modelID = f.split(' - ')[0]
-    modelNum = int(modelID.replace(model, ''))
+    modelVersion = f.split(' - ')[0]
+    modelNum = int(modelVersion.replace(model, ''))
+    modelId = f.split(' - ')[1].split('.')[0]
     data['modelNum'] = modelNum
 
     # Each dataframe has metrics for training and testing.
@@ -60,7 +64,7 @@ def plotPerformanceOverEpoch(
         break
 
     if not isIn:
-      print(f'{metric} not in {modelID}')
+      print(f'{metric} not in {modelVersion}')
       return
 
     isIn = False
@@ -70,7 +74,7 @@ def plotPerformanceOverEpoch(
         break
 
     if not isIn:
-      print(f'{metric} not in {modelID}')
+      print(f'{metric} not in {modelVersion}')
       return
 
   
@@ -79,15 +83,22 @@ def plotPerformanceOverEpoch(
       df.reset_index(drop=True)
     data = pd.concat(dfs).reset_index(drop=True)
 
+    # Only include the epochs up to the epoch limit
+    data = data[data['Epoch'] <= epoch_limit]
+
     # plot the data to a line plot where the x-axis is the epoch and the y-axis
     # is the metric value and the hue is the mode
+    plt.figure(figsize=(5, 3.5))
     sns.lineplot(data=data, x='Epoch', y=metric, hue='mode')
-    plt.title(f'{formatString(modelName)} - {modelID}')
+    plt.title(f'{metric} of {modelVersion}')
     plt.xlabel('Epoch')
     plt.ylabel(metric)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))  # Add this line to use scientific notation on the y-axis
+    plt.tight_layout()
+
     saveDir = os.path.join('images', 'graphs', 'performance', model, metric)
     os.makedirs(saveDir, exist_ok=True)
-    plt.savefig(os.path.join(saveDir, f'{modelID} - {metric}.png'))
+    plt.savefig(os.path.join(saveDir, f'{modelVersion} {modelId} - {metric}.png'))
     
     if verbose:
       plt.show()
@@ -95,37 +106,43 @@ def plotPerformanceOverEpoch(
     plt.close()
 
 def getColumns(data, columns, metaColumns, modeColumns, mode):
+    subDfs = []
     if len(modeColumns) // 4 > 1:
-      subNetworks = []
+      subNetworkIds = []
       for colName in modeColumns:
-        subNetwork = colName.split(' ')[1]
-        if subNetwork not in subNetworks:
-          subNetworks.append(subNetwork)
+        subNetworkId = colName.split(' ')[1]
+        if subNetworkId not in subNetworkIds:
+          subNetworkIds.append(subNetworkId)
       
-      for subNetwork in subNetworks:
-        subNetworkColumns = [c for c in columns if f'{mode} {subNetwork}' in c]
+      for subNetworkId in subNetworkIds:
+        subNetworkColumns = [c for c in columns if f'{mode} {subNetworkId}' in c]
         # Create a new dataframe with the data from data in the columns stated in
         # trainColumns and metaColumns
         subNetworkData = data[metaColumns + subNetworkColumns]
-        subNetworkData['mode'] = f'{subNetwork} {mode}'
+        subNetworkData['mode'] = f'{subNetworkId} {mode}'
         subNetworkData = subNetworkData.rename(columns={c: formatMetricName(c) for c in subNetworkColumns})
-        return subNetworkData.reset_index(drop=True)
+        subNetworkData = subNetworkData.reset_index(drop=True)
+        subDfs.append(subNetworkData)
     else:
       # Create a new dataframe with the data from data in the columns stated in
       # testColumns and metaColumns
       modeData = data[metaColumns + modeColumns]
       modeData['mode'] = mode
       modeData = modeData.rename(columns={c: formatMetricName(c) for c in modeColumns})
-      return modeData.reset_index(drop=True)
+      modeData = modeData.reset_index(drop=True)
+      subDfs.append(modeData)
+
+    return pd.concat(subDfs)
 
 if __name__ == '__main__':
-  models = ['NN', 'CNN', 'GAN', 'DCGAN', 'VAE', 'ResNet']
+  models = ['NN', 'CNN', 'GAN', 'DCGAN', 'VAE', 'ResNet', 'UNN']
   metrics = ['BCE', 'BCELogits', 'MSE', 'MAE', 'SSIM']
   materials = ['copper', 'aluminium']
 
   for material in materials:
     for model in models:
       for metric in metrics:
+        print(f'Plotting {model} - {metric} for {material}')
         plotPerformanceOverEpoch(
           material=material,
           model=model,
