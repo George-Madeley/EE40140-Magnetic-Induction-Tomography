@@ -6,6 +6,10 @@ from pandas import DataFrame
 from .IClassification import IClassification
 
 class SupportVectorMachine(IClassification):
+  """
+  SupportVectorMachine class for performing classification using Support Vector
+  Machine algorithm.
+  """
   def __init__(
       self,
       labelName: Literal['shape', 'sample'] = 'shape',
@@ -16,8 +20,11 @@ class SupportVectorMachine(IClassification):
     """
     Initializes a SupportVectorMachine object.
 
-    Returns:
-    - None
+    Args:
+      labelName: The name of the label column. Defaults to 'shape'.
+      noise: Whether to add noise to the data. Defaults to False.
+      oneHotEncode: Whether to perform one-hot encoding on the data. Defaults to False.
+      params: Additional parameters for the RandomForestClassifier. Defaults to {}.
     """
     self.validParams = {
       'C': [0.1, 1, 10, 100],
@@ -25,17 +32,15 @@ class SupportVectorMachine(IClassification):
       'degree': list(range(1, 6)),
       'cache_size': [200, 400, 600, 800, 1000],
     }
-    self.labelName = labelName
-    self.noise = noise
-    self.oneHotEncode = oneHotEncode
+    super().__init__(labelName, noise, oneHotEncode)
     self.model = SVC(**params)
   
   def train(self, df: DataFrame) -> None:
     """
-    Train the model
+    Trains the model.
 
-    :param train_df: training dataframe
-    :param noise: whether to include background noise
+    Args:
+      df: The input DataFrame containing the training data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -43,12 +48,13 @@ class SupportVectorMachine(IClassification):
 
   def test(self, df: DataFrame) -> float:
     """
-    Test the model
+    Tests the model.
 
-    :param test_df: test dataframe
-    :param noise: whether to include background noise
+    Args:
+      df: The input DataFrame containing the test data.
 
-    :return: score
+    Returns:
+      The accuracy score of the model on the test data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -58,10 +64,13 @@ class SupportVectorMachine(IClassification):
   
   def predict(self, df: DataFrame) -> List[Union[float, List[float]]]:
     """
-    Predict the labels of the test data
+    Makes predictions using the model.
 
-    :param test_df: test dataframe
-    :param noise: whether to include background noise
+    Args:
+      df: The input DataFrame containing the data to be predicted.
+
+    Returns:
+      The predicted labels and the actual labels.
     """
     values, labels = super().getValuesAndLabels(df)
     predictions = self.model.predict(values)
@@ -70,9 +79,9 @@ class SupportVectorMachine(IClassification):
   
   def getDefaultParams(self):
     """
-    Get the default parameters for the model
-    
+    Returns the default parameters of the model.
+
     Returns:
-    - dict: default parameters
+      The default parameters of the model.
     """
     return self.model.get_params()

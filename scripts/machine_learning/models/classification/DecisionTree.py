@@ -1,10 +1,14 @@
-from typing import Literal
+from typing import Literal, Tuple
 from pandas import DataFrame
 from sklearn.tree import DecisionTreeClassifier
 
 from .IClassification import IClassification
 
 class DecisionTree(IClassification):
+  """
+  DecisionTree class for performing classification using Decision Tree algorithm.
+  """
+
   def __init__(
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
@@ -13,31 +17,28 @@ class DecisionTree(IClassification):
     params: dict = {}
   ):
     """
-    Initialize a DecisionTree object.
+    Initializes a Decision Tree object.
 
     Args:
-        labelName (Literal['shape', 'sample'], optional): The name of the label to predict. Defaults to 'shape'.
-        noise (bool, optional): Whether to add noise to the data. Defaults to False.
+      labelName: The name of the label column. Defaults to 'shape'.
+      noise: Whether to add noise to the data. Defaults to False.
+      oneHotEncode: Whether to perform one-hot encoding on the data. Defaults to False.
+      params: Additional parameters for the RandomForestClassifier. Defaults to {}.
     """
     self.validParams = {
       "criterion": ["gini", "entropy", "log_loss"],
       "splitter": ["best", "random"],
       "max_depth": list(range(1, 1001)),
     }
-    self.labelName = labelName
-    self.noise = noise
-    self.oneHotEncode = oneHotEncode
+    super().__init__(labelName, noise, oneHotEncode)
     self.model = DecisionTreeClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
-    Trains the decision tree model using the provided DataFrame.
+    Trains the model.
 
     Args:
-      df (DataFrame): The input DataFrame containing the training data.
-
-    Returns:
-      None
+      df: The input DataFrame containing the training data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -45,13 +46,13 @@ class DecisionTree(IClassification):
 
   def test(self, df: DataFrame) -> float:
     """
-    Test the decision tree model on the given DataFrame and return the accuracy score.
+    Tests the model.
 
-    Parameters:
-    - df (DataFrame): The DataFrame containing the test data.
+    Args:
+      df: The input DataFrame containing the test data.
 
     Returns:
-    - float: The accuracy score of the decision tree model on the test data.
+      The accuracy score of the model on the test data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -59,15 +60,15 @@ class DecisionTree(IClassification):
 
     return score
   
-  def predict(self, df: DataFrame) -> list:
+  def predict(self, df: DataFrame) -> Tuple[list, list]:
     """
-    Predicts the labels for the given DataFrame using the trained model.
+    Makes predictions using the model.
 
     Args:
-      df (DataFrame): The input DataFrame containing the feature values.
+      df: The input DataFrame containing the data to be predicted.
 
     Returns:
-      list: The predicted labels for the input DataFrame.
+      The predicted labels and the actual labels.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -75,9 +76,10 @@ class DecisionTree(IClassification):
   
   def getDefaultParams(self) -> dict:
     """
-    Get the default parameters
+    Returns the default parameters of the model.
 
-    :return: default parameters
+    Returns:
+      The default parameters of the model.
     """
     return self.model.get_params()
   

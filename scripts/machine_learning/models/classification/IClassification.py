@@ -10,6 +10,24 @@ from pandas import DataFrame, concat
 from ..IModel import IModel
 
 class IClassification(IModel):
+  def __init__(
+      self,
+      labelName: Literal['shape', 'sample'] = 'shape',
+      noise: bool = False,
+      oneHotEncode: bool = False
+    ):
+    """
+    Initializes a IClassification object.
+
+    :param labelName: The name of the label column. Defaults to 'shape'.
+    :param noise: Whether to add noise to the data. Defaults to False.
+    :param oneHotEncode: Whether to perform one-hot encoding on the data. Defaults to False.
+    """
+    self.labelName = labelName
+    self.noise = noise
+    self.oneHotEncode = oneHotEncode
+
+
   @abstractmethod
   def getDefaultParams(self):
     """

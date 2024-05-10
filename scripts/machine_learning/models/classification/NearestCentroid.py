@@ -6,6 +6,11 @@ from typing import List, Literal
 from .IClassification import IClassification
 
 class NearestCentroid(IClassification):
+  """
+  NearestCentroid is a classification model that assigns new samples to the class of the nearest centroid.
+  It inherits from the IClassification interface.
+  """
+
   def __init__(
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
@@ -14,29 +19,26 @@ class NearestCentroid(IClassification):
     params: dict = {}
   ):
     """
-    Initialize the NearestCentroid model.
+    Initializes a Nearest Centroid object.
 
     Args:
-      labelName (Literal['shape', 'sample'], optional): The name of the label to use for classification. Defaults to 'shape'.
-      noise (bool, optional): Whether to add noise to the data. Defaults to False.
+      labelName: The name of the label column. Defaults to 'shape'.
+      noise: Whether to add noise to the data. Defaults to False.
+      oneHotEncode: Whether to perform one-hot encoding on the data. Defaults to False.
+      params: Additional parameters for the RandomForestClassifier. Defaults to {}.
     """
     self.validParams = {
       'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
     }
-    self.labelName = labelName
-    self.noise = noise
-    self.oneHotEncode = oneHotEncode
+    super().__init__(labelName, noise, oneHotEncode)
     self.model = NearestCentroidClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
-    Trains the NearestCentroid model using the provided DataFrame.
+    Trains the model.
 
     Args:
-      df (DataFrame): The input DataFrame containing the training data.
-
-    Returns:
-      None
+      df: The input DataFrame containing the training data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -44,13 +46,13 @@ class NearestCentroid(IClassification):
 
   def test(self, df: DataFrame) -> float:
     """
-    Test the model using the provided DataFrame.
+    Tests the model.
 
     Args:
-      df (DataFrame): The DataFrame containing the test data.
+      df: The input DataFrame containing the test data.
 
     Returns:
-      float: The score of the model on the test data.
+      The accuracy score of the model on the test data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -60,13 +62,13 @@ class NearestCentroid(IClassification):
 
   def predict(self, df: DataFrame) -> List:
     """
-    Predicts the labels for the given DataFrame using the trained model.
+    Makes predictions using the model.
 
     Args:
-      df (DataFrame): The input DataFrame containing the feature values.
+      df: The input DataFrame containing the data to be predicted.
 
     Returns:
-      List: The predicted labels for the input DataFrame.
+      The predicted labels and the actual labels.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -76,8 +78,9 @@ class NearestCentroid(IClassification):
   
   def getDefaultParams(self) -> dict:
     """
-    Get the default parameters
+    Returns the default parameters of the model.
 
-    :return: default parameters
+    Returns:
+      The default parameters of the model.
     """
     return self.model.get_params()

@@ -1,11 +1,13 @@
 from typing import Literal
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier
-
 from .IClassification import IClassification
 
-
 class RandomForest(IClassification):
+  """
+  Random Forest classification model.
+  """
+
   def __init__(
     self,
     labelName: Literal['shape', 'sample'] = 'shape',
@@ -16,29 +18,26 @@ class RandomForest(IClassification):
     """
     Initializes a RandomForest object.
 
-    Parameters:
-    - labelName: The name of the label to predict. Can be either 'shape' or 'sample'. Default is 'shape'.
-    - noise: Whether to add noise to the data. Default is False.
+    Args:
+      labelName: The name of the label column. Defaults to 'shape'.
+      noise: Whether to add noise to the data. Defaults to False.
+      oneHotEncode: Whether to perform one-hot encoding on the data. Defaults to False.
+      params: Additional parameters for the RandomForestClassifier. Defaults to {}.
     """
     self.validParams = {
       'n_estimators': list(range(1, 1001)),
       'criterion': ['gini', 'entropy', 'log_loss'],
       'max_depth': list(range(1, 101)),
     }
-    self.labelName = labelName
-    self.noise = noise
-    self.oneHotEncode = oneHotEncode
+    super().__init__(labelName, noise, oneHotEncode)
     self.model = RandomForestClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
-    Trains the random forest model using the provided DataFrame.
+    Trains the model.
 
     Args:
-      df (DataFrame): The input DataFrame containing the training data.
-
-    Returns:
-      None
+      df: The input DataFrame containing the training data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -46,40 +45,40 @@ class RandomForest(IClassification):
 
   def test(self, df: DataFrame) -> float:
     """
-    Test the random forest model on the given DataFrame.
+    Tests the RandomForest model.
 
     Args:
-      df (DataFrame): The DataFrame containing the test data.
+      df: The input DataFrame containing the test data.
 
     Returns:
-      float: The score of the random forest model on the test data.
+      The accuracy score of the model on the test data.
     """
     values, labels = super().getValuesAndLabels(df)
 
     score = self.model.score(values, labels)
 
     return score
-  
+
   def predict(self, df: DataFrame) -> list:
     """
-    Predicts the labels for the given DataFrame using the trained random forest model.
+    Makes predictions using the RandomForest model.
 
     Args:
-      df (DataFrame): The input DataFrame containing the features.
+      df: The input DataFrame containing the data to be predicted.
 
     Returns:
-      list: The predicted labels for the input DataFrame.
+      The predicted labels and the actual labels.
     """
     values, labels = super().getValuesAndLabels(df)
 
     predictions = self.model.predict(values)
     return predictions, labels
-  
+
   def getDefaultParams(self) -> dict:
     """
-    Get the default parameters
+    Returns the default parameters of the RandomForest model.
 
-    :return: default parameters
+    Returns:
+      The default parameters of the model.
     """
     return self.model.get_params()
-    

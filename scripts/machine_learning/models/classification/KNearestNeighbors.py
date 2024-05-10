@@ -5,18 +5,26 @@ from pandas import DataFrame
 
 from .IClassification import IClassification
 class KNearestNeighbors(IClassification):
-  def __init__(
-      self,
-      labelName: Literal['shape', 'sample'] = 'shape',
-      noise: bool = False,
-      oneHotEncode: bool = False,
-      params: dict = {}
-    ):
-    """
-    Initializes a KNearestNeighbors object.
+  """
+  KNearestNeighbors is a classification model based on the k-nearest neighbors
+  algorithm.
+  """
 
-    Returns:
-    - None
+  def __init__(
+    self,
+    labelName: Literal['shape', 'sample'] = 'shape',
+    noise: bool = False,
+    oneHotEncode: bool = False,
+    params: dict = {}
+  ):
+    """
+    Initializes a K Nearest Neighbour object.
+
+    Args:
+      labelName: The name of the label column. Defaults to 'shape'.
+      noise: Whether to add noise to the data. Defaults to False.
+      oneHotEncode: Whether to perform one-hot encoding on the data. Defaults to False.
+      params: Additional parameters for the RandomForestClassifier. Defaults to {}.
     """
     self.validParams = {
       'weights': ['uniform', 'distance'],
@@ -24,17 +32,15 @@ class KNearestNeighbors(IClassification):
       'metric': ['minkowski', 'euclidean', 'manhattan', 'chebyshev'],
       'n_neighbors': list(range(1, 101)),
     }
-    self.labelName = labelName
-    self.noise = noise
-    self.oneHotEncode = oneHotEncode
+    super().__init__(labelName, noise, oneHotEncode)
     self.model = KNeighborsClassifier(**params)
 
   def train(self, df: DataFrame) -> None:
     """
-    Train the model
+    Trains the model.
 
-    :param train_df: training dataframe
-    :param noise: whether to include background noise
+    Args:
+      df: The input DataFrame containing the training data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -42,12 +48,13 @@ class KNearestNeighbors(IClassification):
 
   def test(self, df: DataFrame) -> float:
     """
-    Test the model
+    Tests the model.
 
-    :param test_df: test dataframe
-    :param noise: whether to include background noise
+    Args:
+      df: The input DataFrame containing the test data.
 
-    :return: score
+    Returns:
+      The accuracy score of the model on the test data.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -57,12 +64,13 @@ class KNearestNeighbors(IClassification):
 
   def predict(self, df: DataFrame) -> List[Union[float, List[float]]]:
     """
-    Predict the labels of the test data
+    Makes predictions using the model.
 
-    :param test_df: test dataframe
-    :param noise: whether to include background noise
+    Args:
+      df: The input DataFrame containing the data to be predicted.
 
-    :return: predictions
+    Returns:
+      The predicted labels and the actual labels.
     """
     values, labels = super().getValuesAndLabels(df)
 
@@ -72,8 +80,9 @@ class KNearestNeighbors(IClassification):
 
   def getDefaultParams(self) -> dict:
     """
-    Get the default parameters
+    Returns the default parameters of the model.
 
-    :return: default parameters
+    Returns:
+      The default parameters of the model.
     """
     return self.model.get_params()
