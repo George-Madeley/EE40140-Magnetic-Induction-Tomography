@@ -80,7 +80,10 @@ class IGeneration(IModel):
       if self.name not in self.loadFile:
         raise FileExistsError(f'The load file provided {self.loadFile} does not match the model {self.name}')
       load_path = os.path.join(self.loadFile)
-      self.model.load_state_dict(torch.load(load_path))
+      if self.device == torch.device('cpu'):
+        self.model.load_state_dict(torch.load(load_path, map_location='cpu'))
+      else:
+        self.model.load_state_dict(torch.load(load_path))
   
   def run(
     self,
