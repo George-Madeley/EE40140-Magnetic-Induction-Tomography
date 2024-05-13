@@ -5,6 +5,13 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Live Plot",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/MIT.py",
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Python Debugger: Current File",
       "type": "debugpy",
       "request": "launch",
@@ -12,11 +19,11 @@
       "console": "integratedTerminal"
     },
     {
-        "name": "Preprocess",
-        "type": "debugpy",
-        "request": "launch",
-        "program": "${workspaceFolder}/scripts/preprocess.py",
-        "console": "integratedTerminal"
+      "name": "Preprocess",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/preprocess.py",
+      "console": "integratedTerminal"
     },
     {
       "name": "Classification",
