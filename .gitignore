@@ -171,5 +171,5 @@ data/data_samples_copper.csv
 data/data_samples_iron.csv
 
 # ignore the saved model states
-./models/
+*.pt
 
