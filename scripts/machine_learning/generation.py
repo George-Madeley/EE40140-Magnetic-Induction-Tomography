@@ -1,4 +1,5 @@
 import os
+import json
 from typing import List, Literal
 
 
@@ -41,124 +42,29 @@ def runModels():
   #   raise ValueError(f"Common factor {batchSize} not found in {commonFactors}")
 
 
-  NNs = {
-    'NN1': [480],
-    'NN2': [960],
-    'NN3': [1200],
-    'NN4': [2400],
-    'NN5': [480, 960],
-    'NN6': [480, 2400],
-    'NN7': [1200,2400],
+  # get the model_structures.json file
+  models = {
+    'CNN': {},
+    'DCGAN': {},
+    'GAN': {},
+    'NN': {},
+    'ResNet': {},
+    'UNN': {},
+    'VAE': {},
   }
+  filepath = os.path.join('scripts', 'machine_learning', 'model_structures.json')
+  with open(filepath, 'r') as f:
+    model_structures = json.load(f)
+    
+    for model_initial in models.keys():
+      # Get a dictionary of all the models in model_structures that start with
+      # the model_initial
+      model_names = [model for model in model_structures.keys() if model.startswith(model_initial)]
 
-  CNNs = {
-    'CNN1': [2],
-    'CNN2': [4],
-    'CNN3': [5],
-    'CNN4': [10],
-    'CNN5': [2, 4],
-    'CNN6': [2, 10],
-    'CNN7': [5, 10],
-  }
+      # add each model to the models dictionary
+      for model_name in model_names:
+        models[model_initial][model_name] = model_structures[model_name]
 
-  GANs = {
-    'GAN1': {
-      'discriminator': [64],
-      'generator': [480]
-    },
-    'GAN2': {
-      'discriminator': [64],
-      'generator': [960]
-    },
-    'GAN3': {
-      'discriminator': [15, 240],
-      'generator': [1200]
-    },
-    'GAN4': {
-      'discriminator': [15, 240],
-      'generator': [2400]
-    },
-    'GAN5': {
-      'discriminator': [20, 320],
-      'generator': [480, 960]
-    },
-    'GAN6': {
-      'discriminator': [20, 320],
-      'generator': [480, 2400]
-    },
-    'GAN7': {
-      'discriminator': [20, 400],
-      'generator': [1200, 2400]
-    },
-  }
-
-  DCGANs = {
-    'DCGAN1': {
-      'discriminator': [2],
-      'generator': [2]
-    },
-    'DCGAN2': {
-      'discriminator': [4],
-      'generator': [4]
-    },
-    'DCGAN3': {
-      'discriminator': [2, 4, 2],
-      'generator': [2, 4, 2]
-    },
-    'DCGAN4': {
-      'discriminator': [2, 6, 2],
-      'generator': [2, 6, 2]
-    },
-    'DCGAN5': {
-      'discriminator': [16, 32, 16],
-      'generator': [16, 32, 16]
-    },
-  }
-
-  VAEs = {
-    'VAE1': {
-      'encoder': [48, 12, 4],
-      'decoder': [10, 60, 480]
-    },
-    'VAE2': {
-      'encoder': [48, 12, 4],
-      'decoder': [20, 160, 960]
-    },
-    'VAE3': {
-      'encoder': [120, 40, 10],
-      'decoder': [10, 60, 480]
-    },
-    'VAE4': {
-      'encoder': [120, 40, 10],
-      'decoder': [20, 160, 960]
-    },
-    'VAE5': {
-      'encoder': [40, 8, 4],
-      'decoder': [8, 48, 480]
-    },
-    'VAE6': {
-      'encoder': [40, 8, 4],
-      'decoder': [12, 60, 480]
-    },
-  }
-
-  UNNs = {
-    'UNN1': [5],
-    'UNN2': [5, 2],
-    'UNN3': [5, 2, 2],
-    'UNN4': [5, 4],
-    'UNN5': [2],
-    'UNN6': [2, 2],
-    'UNN7': [2, 5],
-    'UNN8': [2, 2, 5],
-    'UNN9': [4, 5],
-    'UNN10': [10],
-    'UNN11': [10, 2],
-  }
-
-  ResNets = {
-    'ResNet': []
-  }
 
   defaultArgs = {
     'labelName': labelName,
@@ -171,36 +77,6 @@ def runModels():
     'oneHotEncode': True,
     'toSave': True,
   }
-
-  best_UNN = list(UNNs.items())[0]
-
-  models = [
-    UNN(
-      name=best_UNN[0],
-      structure=best_UNN[1],
-      **defaultArgs
-    )
-  ]
-
-  # predictUnknows(material, models, batchSize)
-
-  down_scale_factors = [32, 16, 8, 4]
-  files = [
-    'UNN1 - RUhMoXnXrY',
-    'UNN1 - aQzGkfHPos',
-    'UNN1 - ltxbOJIHIV',
-    'UNN1 - eJgQvcwlUb',
-  ]
-
-  for down_scale_factor, file in zip(down_scale_factors, files):
-    model = UNN(
-      name=best_UNN[0],
-      structure=best_UNN[1],
-      downScaleFactor=down_scale_factor,
-      loadFile=file,
-      **defaultArgs
-    )
-    predictUnknows(material, [model], batchSize)
 
 
 def predictUnknows(material, models, batchSize=45):
