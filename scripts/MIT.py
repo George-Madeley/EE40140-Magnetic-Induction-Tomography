@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
+import pandas as pd
+import torch
 
 from machine_learning.models.generation import *
 
@@ -15,20 +17,47 @@ def MIT():
   '''
 
   args = getArgs()
-  # model = getGenerator(**args)
+  model = getGenerator(**args)
 
   # data = readSensor()
 
   fig = plt.figure()
-  ax1 = fig.add_subplot(1, 1, 1)
+  ax1 = fig.add_subplot(1, 2, 1)
+  ax2 = fig.add_subplot(1, 2, 2)
 
   def animate(i):
     '''
     Animation function.
     '''
-    data = readSensor(num_frames=1)
+    cc_data, bb_data = getDataFromFile(i)
+    # concatenate the data
+    data = np.concatenate((cc_data, bb_data)).astype(np.float32)
+
+    # convert the data to a tensor
+    data = torch.tensor(data, dtype=torch.float32).to(model.device)
+
+    # Add a batch dimension
+    data = data.unsqueeze(0)
+
+    # generate the image
+    generated_image = model.predict(data)
+    generated_image = generated_image.squeeze(0).squeeze(0).detach().cpu().numpy()
+
+
+    # plot cc_data and bb_data on the first axis then the generated image on the
+    # second axis
     ax1.clear()
-    ax1.plot(data)
+    ax1.plot(cc_data, label='cc_data')
+    ax1.plot(bb_data, label='bb_data')
+    ax1.legend()
+    ax1.set_title('Signal')
+    ax1.set_xlabel('Coil')
+    ax1.set_ylabel('Voltage Differences')
+
+    ax2.clear()
+    ax2.imshow(generated_image, cmap='gray', vmin=0, vmax=1)
+    ax2.set_title('Generated Image')
+
 
   ani = animation.FuncAnimation(fig, animate)
   plt.show()
@@ -95,19 +124,19 @@ def getGenerator(**kwargs):
     raise ValueError(f"Invalid file name: {file_name}")
   
   # get the model anme and the model version
-  model_name, model_version = file_name
+  model_version, model_id = file_name
 
   # get the model structures
-  with open(os.path.join('machine_learning', 'model_structures.json'), 'r') as f:
+  with open(os.path.join('scripts', 'machine_learning', 'model_structures.json'), 'r') as f:
     model_structures = json.load(f)
 
   # check if the model name is in the model structures
-  if model_name not in model_structures.keys():
-    raise ValueError(f"Model {model_name} not in model structures {model_structures.keys()}")
+  if model_version not in model_structures.keys():
+    raise ValueError(f"Model {model_version} not in model structures {model_structures.keys()}")
   
-  model_structure = model_structures[model_name]
+  model_structure = model_structures[model_version]
 
-  models_classes = {
+  model_classes = {
     'CNN': NN,
     'DCGAN': GAN,
     'GAN': GAN,
@@ -118,10 +147,10 @@ def getGenerator(**kwargs):
   }
 
   # get a list of all the models that start with the model name
-  model_initials = [model for model in model_structures.keys() if model_name.startswith(model)]
+  model_initials = [model for model in model_classes.keys() if model_version.startswith(model)]
   if len(model_initials) != 1:
     raise ValueError(f"Invalid model initials: {model_initials}")
-  model_class = models_classes[model_initials[0]]
+  model_class = model_classes[model_initials[0]]
 
   default_model_args = {
     'labelName': kwargs.get('--labelName', kwargs.get('-ln', 'material')),
@@ -132,11 +161,11 @@ def getGenerator(**kwargs):
     'maxEpoch': kwargs.get('--maxEpoch', kwargs.get('-me', 1000)),
     'perPixelLoss': kwargs.get('--perPixelLoss', kwargs.get('-ppl', True)),
     'oneHotEncode': kwargs.get('--oneHotEncode', kwargs.get('-ohe', True)),
-    'toSave': kwargs.get('--toSave', kwargs.get('-ts', True)),
+    'toSave': kwargs.get('--toSave', kwargs.get('-ts', False)),
   }
 
   model = model_class(
-    name=model_name,
+    name=model_version,
     structure=model_structure,
     **default_model_args,
     loadFile=file_path + ext,
@@ -180,9 +209,24 @@ def readSensor(
   # set any value bigger than 2e4 to 0
   data[data > 2e4] = 0
 
+  # normalise the data
+  data = data / 2e4
+
   return data
   
+def getDataFromFile(index: int = 0):
+  df_path = os.path.join('data', 'data_samples_iron.csv')
+  df = pd.read_csv(df_path)
 
+  # get columns that begin with 'cc_' but not 'cc_filename'
+  columns = [column for column in df.columns if column.startswith('cc_') and column != 'cc_filename']
+  cc_data = df.iloc[index][columns].values
+
+  
+  columns = [column for column in df.columns if column.startswith('bb_') and column != 'bb_filename']
+  bb_data = df.iloc[index][columns].values
+
+  return cc_data, bb_data
 
 
 if __name__ == '__main__':
