@@ -79,7 +79,7 @@ class IGeneration(IModel):
     if self.loadFile:
       if self.name not in self.loadFile:
         raise FileExistsError(f'The load file provided {self.loadFile} does not match the model {self.name}')
-      load_path = os.path.join('models', f'{self.loadFile}.pt')
+      load_path = os.path.join(self.loadFile)
       self.model.load_state_dict(torch.load(load_path))
   
   def run(
