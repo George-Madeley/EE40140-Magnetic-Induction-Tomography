@@ -13,8 +13,8 @@ def runModels():
   Run the generation models
   """
 
-  material = 'unknown'
-  labelName = 'sample'
+  material = 'iron'
+  labelName = 'shape'
   batchSize = 45
 
   if material == 'iron' and labelName == 'shape':
@@ -27,19 +27,26 @@ def runModels():
     raise ValueError(f"Material {material} and label {labelName} not correct combination")
 
   if material == 'iron':
-    fixedIndices = [1342, 1234, 1239, 944, 609, 417, 1235, 120]
+    fixedIndices = [7, 22, 35, 901, 219, 220, 11, 12]
   elif material == 'copper':
-    fixedIndices = [1342, 3457, 1238, 610, 123, 1236, 948, 419]
+    fixedIndices = [419, 123, 1238, 700, 610, 948, 949, 1236]
   else:
     print(f"Material {material} not found")
     fixedIndices = [1 for _ in range(8)]
 
-  # df_train, df_test, df_val = getData(material)
+  df_train, df_test, df_val = getData(material)
 
-  # commonFactors = getCommonFactors(df_train.shape[0], df_test.shape[0])
+  # get the index in df_val where 'sample' is A
+  # df_val[df_val['sample'] == 'A'].index[0]
+  # get the columns that begin with 'shape_'
+  # cols = [col for col in df_train.columns if col.startswith('shape_')]
+  # get the values of record 52 in df_val at the columns in cols
+  
 
-  # if batchSize not in commonFactors:
-  #   raise ValueError(f"Common factor {batchSize} not found in {commonFactors}")
+  commonFactors = getCommonFactors(df_train.shape[0], df_test.shape[0])
+
+  if batchSize not in commonFactors:
+    raise ValueError(f"Common factor {batchSize} not found in {commonFactors}")
 
 
   # get the model_structures.json file
@@ -69,14 +76,29 @@ def runModels():
   defaultArgs = {
     'labelName': labelName,
     'noise': True,
-    # 'downScaleFactor': 8,
+    'downScaleFactor': 8,
     'batchSize': batchSize,
     'learningRate': 0.0001,
-    'maxEpoch': 1,
+    'maxEpoch': 0,
     'perPixelLoss': True,
     'oneHotEncode': True,
-    'toSave': True,
+    'toSave': False,
   }
+
+  loadFile = os.path.join('models', 'UNN', 'UNN1 - ntVTKlWsDV.pt')
+
+  model = UNN(
+    name='UNN1',
+    structure=models['UNN']['UNN1'],
+    loadFile=loadFile,
+    **defaultArgs
+  )
+  model.run(
+    df_train,
+    df_test,
+    df_val,
+    fixedIndices
+  )
 
 
 def predictUnknows(material, models, batchSize=45):
