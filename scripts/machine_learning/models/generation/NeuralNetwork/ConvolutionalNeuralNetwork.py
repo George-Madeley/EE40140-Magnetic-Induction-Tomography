@@ -1,23 +1,31 @@
 from torch import nn
 from torch import Tensor
+from typing import List
 
 
 class ConvolutionalNeuralNetwork(nn.Module):
   """
-  ANN class for generating images using a neural network.
+  Convolutional Neural Network model.
 
   Args:
-      None
+    inputSize (int): Size of the input.
+    width (int): Width of the input image.
+    height (int): Height of the input image.
+    structure (List[int]): List of integers representing the structure of the network.
 
   Attributes:
-      model (nn.Sequential): Sequential model consisting of linear layers and activation functions.
-
-  Methods:
-      forward(x: Tensor) -> Tensor: Forward pass of the generator network.
-
+    width (int): Width of the input image.
+    height (int): Height of the input image.
+    model (nn.ModuleList): List of layers in the model.
   """
 
-  def __init__(self, inputSize: int, width: int, height: int, structure: list[int]):
+  def __init__(
+    self,
+    inputSize: int,
+    width: int,
+    height: int,
+    structure: List[int]
+  ):
     super().__init__()
 
     structure = [1] + structure
@@ -50,13 +58,13 @@ class ConvolutionalNeuralNetwork(nn.Module):
 
   def forward(self, x: Tensor) -> Tensor:
     """
-    Forward pass of the ANN model.
+    Forward pass of the Convolutional Neural Network model.
 
     Args:
-        x (Tensor): Input tensor.
+      x (Tensor): Input tensor.
 
     Returns:
-        Tensor: Output tensor after passing through the model.
+      Tensor: Output tensor after passing through the model.
     """
     inputTensor = x
     for layer in self.model:

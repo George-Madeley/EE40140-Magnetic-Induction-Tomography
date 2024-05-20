@@ -32,11 +32,12 @@ class GenerativeAdversarialNetwork(IGeneration):
   """
 
   def __init__(
-          self,
-          structure: dict,
-          convD: bool = False,
-          convG: bool = False,
-          **kwargs):
+    self,
+    structure: dict,
+    convD: bool = False,
+    convG: bool = False,
+    **kwargs
+  ):
     super().__init__(**kwargs)
 
     discriminatorStructure = structure.get('discriminator')

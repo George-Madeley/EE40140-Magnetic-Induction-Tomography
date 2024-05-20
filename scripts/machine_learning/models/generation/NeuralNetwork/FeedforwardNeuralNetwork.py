@@ -1,28 +1,36 @@
 from torch import nn
 from torch import Tensor
+from typing import List
 
 
 class FeedforwardNeuralNetwork(nn.Module):
   """
-  ANN class for generating images using a neural network.
+  Feedforward Neural Network model.
 
   Args:
-      None
+    inputSize (int): Size of the input.
+    width (int): Width of the output tensor.
+    height (int): Height of the output tensor.
+    structure (List[int]): List of integers representing the structure of the network.
 
   Attributes:
-      model (nn.Sequential): Sequential model consisting of linear layers and activation functions.
-
-  Methods:
-      forward(x: Tensor) -> Tensor: Forward pass of the generator network.
-
+    width (int): Width of the output tensor.
+    height (int): Height of the output tensor.
+    model (nn.Sequential): Sequential model representing the neural network.
   """
 
-  def __init__(self, inputSize: int, width: int, height: int, structure: list[int]):
+  def __init__(
+    self,
+    inputSize: int,
+    width: int,
+    height: int,
+    structure: List[int]
+  ) -> None:
     super().__init__()
 
     layers = [
-        nn.Linear(inputSize, structure[0]),
-        nn.ReLU(),
+      nn.Linear(inputSize, structure[0]),
+      nn.ReLU(),
     ]
     for i in range(len(structure) - 1):
       layers.append(nn.Linear(structure[i], structure[i + 1]))
@@ -30,7 +38,6 @@ class FeedforwardNeuralNetwork(nn.Module):
 
     layers.append(nn.Linear(structure[-1], width * height))
     layers.append(nn.Sigmoid())
-
 
     self.width = width
     self.height = height
@@ -42,10 +49,10 @@ class FeedforwardNeuralNetwork(nn.Module):
     Forward pass of the ANN model.
 
     Args:
-        x (Tensor): Input tensor.
+      x (Tensor): Input tensor.
 
     Returns:
-        Tensor: Output tensor after passing through the model.
+      Tensor: Output tensor after passing through the model.
     """
     output = self.model(x)
     output = output.view(x.size(0), 1, self.height, self.width)
