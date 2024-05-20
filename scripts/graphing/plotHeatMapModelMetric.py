@@ -1,16 +1,26 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
 import os
+from typing import List, Optional
+
+import matplotlib.pyplot as plt
 
 
 def plotHeatMapModelMetric(
-    specific_models: list[str] = None,
-    material: str = 'aluminium',
-    useColor: bool = True,
-    verbose: bool = False
-):
+  specific_models: Optional[List[str]] = None,
+  material: str = 'aluminium',
+  useColor: bool = True,
+  verbose: bool = False
+) -> None:
+  """
+  Plot a heatmap of the mean absolute error (MAE) metric for the best models.
+
+  Args:
+    specific_models (list[str], optional): List of specific model names to include in the plot. Defaults to None.
+    material (str, optional): Material type. Defaults to 'aluminium'.
+    useColor (bool, optional): Whether to use color-coded heatmaps. Defaults to True.
+    verbose (bool, optional): Whether to display the plot. Defaults to False.
+  """
   directory = os.path.join('results', 'generation', 'best')
   files = os.listdir(directory)
   files = [f for f in files if f.endswith('.csv') and material in f]
@@ -54,7 +64,15 @@ def plotHeatMapModelMetric(
     meanColorMetrics(verbose, df, material)
 
 
-def meanColorMetrics(verbose, df, material):
+def meanColorMetrics(verbose: bool, df: pd.DataFrame, material: str) -> None:
+  """
+  Plot a heatmap of the mean MAE metric for the best models using color-coded heatmaps.
+
+  Args:
+    verbose (bool): Whether to display the plot.
+    df (pandas.DataFrame): Dataframe containing the model metrics.
+    material (str): Material type.
+  """
   keep_columns = ['Model Name']
 
   white_columns = [c for c in df.columns if 'White' in c]
@@ -75,14 +93,14 @@ def meanColorMetrics(verbose, df, material):
   new_columns = ['Model Name'] + [c.split(' ')[0] for c in df.columns[1:]]
   df.columns = new_columns
 
-  # create a heatmap of the data where the rows are the 'Model Name' and the columns are the columns
-  # that contain the color
+  # create a heatmap of the data where the rows are the 'Model Name' and the
+  # columns are the columns that contain the color
   plt.figure(figsize=(8, 5))
   sns.heatmap(
-      df.set_index('Model Name').T,
-      annot=True,
-      fmt=".2e",
-      cmap='coolwarm')
+    df.set_index('Model Name').T,
+    annot=True,
+    fmt=".2e",
+    cmap='coolwarm')
   plt.title('MAE Heatmap of Best Models')
   plt.xlabel('Model Name')
   plt.ylabel('MAE Loss')
@@ -99,14 +117,28 @@ def meanColorMetrics(verbose, df, material):
   plt.close()
 
 
-def useColorMetrics(verbose, labels, df, material):
+def useColorMetrics(
+  verbose: bool,
+  labels: List[str],
+  df: pd.DataFrame,
+        material: str) -> None:
+  """
+  Plot a heatmap of the mean MAE metric for the best models using color-coded heatmaps.
+
+  Args:
+    verbose (bool): Whether to display the plot.
+    labels (list[str]): List of labels for the columns.
+    df (pandas.DataFrame): Dataframe containing the model metrics.
+    material (str): Material type.
+  """
   colors = ['Black', 'White']
 
   for color in colors:
     # get the 'Model Name' and and columns that contain the color from df
     keep_columns = ['Model Name']
     for label in labels:
-      keep_columns += [c for c in df.columns if color in c and c.startswith(label)]
+      keep_columns += [
+          c for c in df.columns if color in c and c.startswith(label)]
 
     colorDf = df[keep_columns]
 
@@ -126,8 +158,8 @@ def useColorMetrics(verbose, labels, df, material):
       except KeyError:
         pass
 
-    # create a heatmap of the data where the rows are the 'Model Name' and the columns are the columns
-    # that contain the color
+    # create a heatmap of the data where the rows are the 'Model Name' and the
+    # columns are the columns that contain the color
     font_size = 14
     plt.figure(figsize=(8, 5))
     sns.heatmap(
@@ -143,11 +175,12 @@ def useColorMetrics(verbose, labels, df, material):
     plt.xticks(rotation=0, fontsize=font_size)
     plt.tight_layout()
 
-    
-
     save_path = os.path.join('images', 'graphs', 'heatmap')
     os.makedirs(save_path, exist_ok=True)
-    plt.savefig(os.path.join(save_path, f'{material} - {color} MAE Heatmap.png'))
+    plt.savefig(
+        os.path.join(
+            save_path,
+            f'{material} - {color} MAE Heatmap.png'))
 
     if verbose:
       plt.show()
@@ -157,14 +190,14 @@ def useColorMetrics(verbose, labels, df, material):
 
 if __name__ == '__main__':
   plotHeatMapModelMetric(
-      specific_models=[
-          'CNN6',
-          'DCGAN4',
-          'GAN7',
-          'NN7',
-          'ResNet1',
-          'VAE4',
-          'UNN1'],
-      material='copper',
-      useColor=True,
-      verbose=True)
+    specific_models=[
+      'CNN6',
+      'DCGAN4',
+      'GAN7',
+      'NN7',
+      'ResNet1',
+      'VAE4',
+      'UNN1'],
+    material='copper',
+    useColor=True,
+    verbose=True)

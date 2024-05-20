@@ -8,15 +8,23 @@ import os
 
 
 def plotBestClassification(
-    verbose: bool = False,
-):
+  verbose: bool = False,
+) -> None:
+  """
+  Plot the best classification results for each model. Does four plots for each
+  model. Two for the material (aluminum and copper) and two for the number of
+  samples (120 and 240).
+
+  Args:
+    verbose (bool, optional): If True, display the plot. Defaults to False.
+  """
   models = [
-      'DecisionTree',
-      'KNearestNeighbors',
-      'NearestCentroid',
-      'RandomForest',
-      'StochasticGradientDescent',
-      'SupportVectorMachine'
+    'DecisionTree',
+    'KNearestNeighbors',
+    'NearestCentroid',
+    'RandomForest',
+    'StochasticGradientDescent',
+    'SupportVectorMachine'
   ]
 
   df_best = pd.DataFrame()
@@ -83,8 +91,8 @@ def plotBestClassification(
   plt.figure(figsize=(10, 7))
   sns.barplot(data=df_best, x='model', y='Accuracy', hue='numSamples')
   plt.title(
-      f'Best Classification Results for each Model',
-      fontsize=fontSize + 4)
+    f'Best Classification Results for each Model',
+    fontsize=fontSize + 4)
   plt.ylabel('Accuracy', fontsize=fontSize + 2)
   plt.xlabel('Model', fontsize=fontSize + 2)
   plt.gca().set_ylim([0.6, 1.0])

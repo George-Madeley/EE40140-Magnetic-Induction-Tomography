@@ -7,10 +7,21 @@ from utils import formatString
 import os
 
 def plotBestGeneratorVersions(
-    material: str = 'aluminium',
-    epoch_limit: int = 1000,
-    verbose: bool = False
-):
+  material: str = 'aluminium',
+  epoch_limit: int = 1000,
+  verbose: bool = False
+) -> None:
+  """
+  Plot the best generator versions for different models based on the MAE Loss
+  metric.
+
+  Args:
+    material (str, optional): The material for which the generator versions are
+    plotted. Defaults to 'aluminium'.
+    epoch_limit (int, optional): The maximum number of epochs to consider.
+    Defaults to 1000.
+    verbose (bool, optional): Whether to display the plots. Defaults to False.
+  """
   models = {
     'CNN': 'N',
     'DCGAN': 'G',

@@ -5,9 +5,16 @@ import pandas as pd
 import os
 
 def plot_confusion_matrix(
-    font_size = 20,
-    verbose = False
-):
+  font_size=20,
+  verbose=False
+) -> None:
+  """
+  Plot confusion matrix for each CSV file in the 'results/classification/ConfusionMatrics' directory.
+
+  Args:
+    font_size (int): The font size for the plot (default is 20).
+    verbose (bool): If True, display the plot (default is False).
+  """
   directory = os.path.join('results', 'classification', 'ConfusionMatrics')
   for filename in os.listdir(directory):
     if not filename.endswith('.csv'):

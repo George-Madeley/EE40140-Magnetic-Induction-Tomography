@@ -1,16 +1,26 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
 import os
 import sys
 
+import matplotlib.pyplot as plt
+
+
 def plotGenerativeMetrics(
-    specific_models: list[str] = None,
-    metric: str = 'MAE',
-    material: str = 'aluminium',
-    verbose: bool = False
-):
+  specific_models: list[str] = None,
+  metric: str = 'MAE',
+  material: str = 'aluminium',
+  verbose: bool = False
+) -> None:
+  """
+  Plot generative metrics for different models.
+
+  Args:
+    specific_models (list[str], optional): List of specific models to include. Defaults to None.
+    metric (str, optional): Metric to plot. Defaults to 'MAE'.
+    material (str, optional): Material type. Defaults to 'aluminium'.
+    verbose (bool, optional): Whether to display additional information. Defaults to False.
+  """
   directory = os.path.join('results', 'generation', material, 'best')
   files = os.listdir(directory)
   files = [f for f in files if f.endswith('.csv')]
@@ -31,7 +41,7 @@ def plotGenerativeMetrics(
     for c in data.columns:
       if 'S S I M' in c:
         data = data.rename(columns={c: c.replace('S S I M', 'SSIM')})
-    
+
     if specific_models is not None:
       data = data[data['Model Name'].isin(specific_models)]
     else:
@@ -82,4 +92,3 @@ if __name__ == '__main__':
     metric=metric,
     verbose=verbose
   )
-  

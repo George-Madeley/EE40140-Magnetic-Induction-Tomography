@@ -1,18 +1,26 @@
-import matplotlib.pyplot as plt
+from typing import List
 import seaborn as sns
 import pandas as pd
-
 import os
 
-def plotRuntimes(verbose: bool = False):
-  file_path = os.path.join('results', 'generation', 'runtimes.csv')
-  df = pd.read_csv(file_path)
+import matplotlib.pyplot as plt
+
+
+def plotRuntimes(verbose: bool = False) -> None:
+  """
+  Plots the runtimes from a CSV file against the downscale factor.
+
+  Args:
+    verbose (bool, optional): If True, displays the plot for each time column. Defaults to False.
+  """
+  file_path: str = os.path.join('results', 'generation', 'runtimes.csv')
+  df: pd.DataFrame = pd.read_csv(file_path)
 
   # all columns should be floats
   df = df.astype(float)
 
   # get the columns that are not 'Downscale Factor'
-  time_columns = df.columns[1:]
+  time_columns: List[str] = df.columns[1:]
 
   # multiple the data by 1e-9 to convert from ns to s
   df[time_columns] *= 1e-9
@@ -22,7 +30,7 @@ def plotRuntimes(verbose: bool = False):
 
   time_columns = [column.replace(' (ns)', ' (s)') for column in time_columns]
 
-  directory = os.path.join('images', 'graphs', 'runtimes')
+  directory: str = os.path.join('images', 'graphs', 'runtimes')
   os.makedirs(directory, exist_ok=True)
 
   for time_column in time_columns:
@@ -34,9 +42,9 @@ def plotRuntimes(verbose: bool = False):
     plt.ylabel(time_column)
     plt.xscale('log', base=2)
     plt.xlim(0)
-    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
-    save_path = os.path.join('images', 'graphs', 'runtimes')
+    save_path: str = os.path.join('images', 'graphs', 'runtimes')
     plt.savefig(os.path.join(save_path, f'{time_column}.png'))
 
     if verbose:
@@ -44,6 +52,6 @@ def plotRuntimes(verbose: bool = False):
 
     plt.close()
 
-  
+
 if __name__ == '__main__':
   plotRuntimes(verbose=True)

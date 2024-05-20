@@ -1,16 +1,22 @@
-import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-
+import os
 from utils import formatString, addUnits
 
-import os
+import matplotlib.pyplot as plt
 
 
 def plotModelMetricsComparison(
-    verbose: bool = False,
-    font_size: int = 16
-  ) -> None:
+  verbose: bool = False,
+  font_size: int = 16
+) -> None:
+  """
+  Plot and save model metrics comparison graphs.
+
+  Args:
+    verbose (bool, optional): Whether to display the plots. Defaults to False.
+    font_size (int, optional): Font size for the plot labels. Defaults to 16.
+  """
   models = {
     'DecisionTree': {
       'criterion': 'entropy',
@@ -67,17 +73,17 @@ def plotModelMetricsComparison(
           raise ValueError(f'{value} not in unique values of {key}')
 
     keepColumns = [
-        'model',
-        'material',
-        'numSamples',
-        'Accuracy',
-        'F1',
-        'Precision',
-        'Recall',
-        'mean_fit_time',
-        'std_fit_time',
-        'mean_score_time',
-        'std_score_time']
+      'model',
+      'material',
+      'numSamples',
+      'Accuracy',
+      'F1',
+      'Precision',
+      'Recall',
+      'mean_fit_time',
+      'std_fit_time',
+      'mean_score_time',
+      'std_score_time']
 
     # Get the record that matches the parameters in the model dictionary
     data = data[
@@ -92,12 +98,12 @@ def plotModelMetricsComparison(
   data = pd.concat(model_data).reset_index(drop=True)
 
   metrics = [
-      'Accuracy',
-      'F1',
-      'Precision',
-      'Recall',
-      'mean_fit_time',
-      'mean_score_time']
+    'Accuracy',
+    'F1',
+    'Precision',
+    'Recall',
+    'mean_fit_time',
+    'mean_score_time']
 
   # create a barplot for each metric in metrics where the x-axis is the
   # model and the y-axis is the metric
@@ -113,12 +119,13 @@ def plotModelMetricsComparison(
     )
     plt.yticks(fontsize=font_size)
     plt.title(
-        f'{formatString(metric)} Comparison for Classification Models',
-        fontsize=font_size + 4)
+      f'{formatString(metric)} Comparison for Classification Models',
+      fontsize=font_size + 4)
 
     save_dir = os.path.join('images', 'graphs', 'metric comparison')
     os.makedirs(save_dir, exist_ok=True)
-    filepath = os.path.join(save_dir, f'Comparison - {formatString(metric)} - Barchart.png')
+    filepath = os.path.join(
+        save_dir, f'Comparison - {formatString(metric)} - Barchart.png')
     plt.savefig(filepath)
 
     if verbose:
@@ -139,12 +146,13 @@ def plotModelMetricsComparison(
     )
     plt.yticks(fontsize=font_size)
     plt.title(
-        f'{formatString(metric)} Comparison for Classification Models',
-        fontsize=font_size + 4)
+      f'{formatString(metric)} Comparison for Classification Models',
+      fontsize=font_size + 4)
 
     save_dir = os.path.join('images', 'graphs', 'comparison')
     os.makedirs(save_dir, exist_ok=True)
-    filepath = os.path.join(save_dir, f'Comparison - {formatString(metric)} - Boxplot.png')
+    filepath = os.path.join(
+        save_dir, f'Comparison - {formatString(metric)} - Boxplot.png')
     plt.savefig(filepath)
 
     if verbose:

@@ -1,13 +1,20 @@
 from matplotlib import pyplot as plt
 import pandas as pd
-
 import os
 
 def plot_before_and_after(
-    down_scale_factor = 1,
-    font_size = 20,
-    verbose = False
-):
+  down_scale_factor: int = 1,
+  font_size: int = 20,
+  verbose: bool = False
+) -> None:
+  """
+  Plot before and after processing images for each sample in the dataset.
+
+  Args:
+    down_scale_factor (int): The factor by which to downscale the images. Default is 1.
+    font_size (int): The font size for the figure title. Default is 20.
+    verbose (bool): Whether to display the plot. Default is False.
+  """
   
   after_width = 640 // down_scale_factor
   after_height = 480 // down_scale_factor

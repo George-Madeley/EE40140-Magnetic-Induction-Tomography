@@ -1,11 +1,16 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-
 import os
 
-def plotSampleNum(
-    verbose: bool = False
-):
+import matplotlib.pyplot as plt
+
+
+def plotSampleNum(verbose: bool = False) -> None:
+  """
+  Plots a bar chart showing the count of each sample in a CSV file.
+
+  Args:
+    verbose (bool): If True, displays the plot. Default is False.
+  """
   # Read the CSV file
   file_path = os.path.join('data', 'data_samples.csv')
   data = pd.read_csv(file_path)
@@ -29,11 +34,16 @@ def plotSampleNum(
   plt.bar(0, 0, color='blue', label='Aluminium Samples')
   plt.bar(0, 0, color='orange', label='Copper Samples')
   plt.legend()
-  
+
   # Save the plot to a file
   save_path = os.path.join('images', 'graphs', 'sample counts')
   os.makedirs(save_path, exist_ok=True)
-  plt.savefig(os.path.join(save_path, 'sample_counts.png'), dpi=300, bbox_inches='tight')
+  plt.savefig(
+      os.path.join(
+          save_path,
+          'sample_counts.png'),
+      dpi=300,
+      bbox_inches='tight')
 
   if verbose:
     plt.show()
