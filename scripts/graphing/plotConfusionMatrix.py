@@ -8,7 +8,7 @@ def plot_confusion_matrix(
     font_size = 20,
     verbose = False
 ):
-  directory = os.path.join('results', 'ConfusionMatrics')
+  directory = os.path.join('results', 'classification', 'ConfusionMatrics')
   for filename in os.listdir(directory):
     if not filename.endswith('.csv'):
       continue
