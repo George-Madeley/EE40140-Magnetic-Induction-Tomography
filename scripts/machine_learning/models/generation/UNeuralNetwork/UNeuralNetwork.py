@@ -1,12 +1,27 @@
 import torch
 from torch import nn
-
 from .UNet import UNet
 from ..IGeneration import IGeneration
+from torch.utils.data import DataLoader
+from typing import List, Tuple, Dict
 
 
 class UNeuralNetwork(IGeneration):
-  def __init__(self, structure, **kwargs):
+  """
+  Class representing the UNeuralNetwork model for generation.
+  """
+
+  def __init__(self, structure: List[int], **kwargs: Dict[str, int]) -> None:
+    """
+    Initialize the UNeuralNetwork model.
+
+    Args:
+    - structure: The structure of the UNet model.
+    - kwargs: Additional keyword arguments.
+
+    Returns:
+    - None
+    """
     super().__init__(**kwargs)
 
     self.model = UNet(
@@ -25,11 +40,18 @@ class UNeuralNetwork(IGeneration):
 
     self.modelNames = ['UNET']
 
-  def train(
-    self,
-    trainLoader,
-    metrics: list[str]
-  ) -> None:
+  def train(self, trainLoader: DataLoader,
+            metrics: List[str]) -> Tuple[float, Dict[str, float]]:
+    """
+    Train the UNeuralNetwork model.
+
+    Args:
+    - trainLoader: The data loader for training data.
+    - metrics: The list of metrics to calculate.
+
+    Returns:
+    - tuple: A tuple containing the loss and losses dictionary.
+    """
     trainLoaderLen = len(trainLoader)
 
     for batch in trainLoader:
@@ -46,25 +68,27 @@ class UNeuralNetwork(IGeneration):
 
       self.optimizerUNet.step()
 
-      losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
+      losses = super().score(
+          metrics,
+          realImagesSamples,
+          generatedImageSamples,
+          signalLabels)
 
     losses = {f'UNET {k}': v / trainLoaderLen for k, v in losses.items()}
 
-    return loss, losses
+    return loss.item(), losses
 
-  def test(
-      self,
-      testLoader,
-      metrics: dict,
-    ) -> float:
+  def test(self, testLoader: DataLoader,
+           metrics: Dict[str, float]) -> Dict[str, float]:
     """
-    Test the generative adversarial network model on the given DataFrame and return the accuracy score.
+    Test the UNeuralNetwork model.
 
-    Parameters:
-    - df (DataFrame): The DataFrame containing the test data.
+    Args:
+    - testLoader: The data loader for test data.
+    - metrics: The dictionary of metrics to calculate.
 
     Returns:
-    - float: The accuracy score of the generative adversarial network model on the test data.
+    - dict: The losses dictionary.
     """
     testLoaderLen = len(testLoader)
 
@@ -75,18 +99,24 @@ class UNeuralNetwork(IGeneration):
 
       generatedImageSamples = self.model(signalSamples)
 
-      losses = super().score(metrics, realImagesSamples, generatedImageSamples, signalLabels)
-    
+      losses = super().score(
+          metrics,
+          realImagesSamples,
+          generatedImageSamples,
+          signalLabels)
+
     losses = {f'UNET {k}': v / testLoaderLen for k, v in losses.items()}
     return losses
 
-  def predict(self, signalSamples) -> None:
+  def predict(self, signalSamples: torch.Tensor) -> torch.Tensor:
     """
-    Predict the labels of the test data
+    Predict the labels of the test data.
 
-    :param predict_df: prediction dataframe
+    Args:
+    - signalSamples: The input signal samples.
 
-    :return: predictions
+    Returns:
+    - torch.Tensor: The generated images.
     """
     generatedImages = self.model(signalSamples)
     generatedImages = generatedImages.detach().cpu()

@@ -1,7 +1,28 @@
 from torch import nn, cat
+import torch
+
 
 class UNet(nn.Module):
-  def __init__(self, inputSize, width, height, structure):
+  def __init__(
+    self,
+    inputSize: int,
+    width: int,
+    height: int,
+    structure: list[int]
+  ):
+    """
+    Initializes the UNet model.
+
+    Args:
+    - inputSize (int): The size of the input tensor.
+    - width (int): The width of the input image.
+    - height (int): The height of the input image.
+    - structure (list): A list of downscale factors for each contracting layer.
+
+    Raises:
+    - ValueError: If the width or height is not divisible by the downscale factor.
+
+    """
     super().__init__()
 
     self.width = width
@@ -13,12 +34,12 @@ class UNet(nn.Module):
     newHeight = height
     for mpf in structure:
       if newWidth % mpf != 0 or newHeight % mpf != 0:
-        raise ValueError(f"Width and height must be divisible by the downscale factor {mpf}")
+        raise ValueError(
+          f"Width and height must be divisible by the downscale factor {mpf}")
       newWidth = newWidth // mpf
       newHeight = newHeight // mpf
       self.channels.append(self.channels[-1] * mpf)
 
-    
     inLayer = [
       nn.Sequential(
         nn.Linear(inputSize, width * height),
@@ -30,11 +51,21 @@ class UNet(nn.Module):
     ]
 
     contractor = [
-      nn.Sequential (
+      nn.Sequential(
         nn.MaxPool2d(kernel_size=structure[i], stride=structure[i]),
-        nn.Conv2d(self.channels[i], self.channels[i+1], kernel_size=3, padding=1),
+        nn.Conv2d(
+          self.channels[i],
+          self.channels[i + 1],
+          kernel_size=3,
+          padding=1
+        ),
         nn.ReLU(),
-        nn.Conv2d(self.channels[i+1], self.channels[i+1], kernel_size=3, padding=1),
+        nn.Conv2d(
+          self.channels[i + 1],
+          self.channels[i + 1],
+          kernel_size=3,
+          padding=1
+        ),
         nn.ReLU()
       ) for i in range(0, len(structure))
     ]
@@ -44,38 +75,90 @@ class UNet(nn.Module):
 
     bottleneck = [
       nn.Sequential(
-        nn.Conv2d(self.channels[0], self.channels[0], kernel_size=3, padding=1),
+        nn.Conv2d(
+            self.channels[0],
+            self.channels[0],
+            kernel_size=3,
+            padding=1),
         nn.ReLU(),
-        nn.ConvTranspose2d(self.channels[0], self.channels[1], kernel_size=structure[0], stride=structure[0]),
+        nn.ConvTranspose2d(
+            self.channels[0],
+            self.channels[1],
+            kernel_size=structure[0],
+            stride=structure[0]),
       )
     ]
 
     expander = [
-      nn.Sequential (
-        nn.Conv2d(self.channels[i] * 2, self.channels[i], kernel_size=3, padding=1),
+      nn.Sequential(
+        nn.Conv2d(
+          self.channels[i] * 2,
+          self.channels[i],
+          kernel_size=3,
+          padding=1
+        ),
         nn.ReLU(),
-        nn.Conv2d(self.channels[i], self.channels[i], kernel_size=3, padding=1),
+        nn.Conv2d(
+          self.channels[i],
+          self.channels[i],
+          kernel_size=3,
+          padding=1
+        ),
         nn.ReLU(),
-        nn.ConvTranspose2d(self.channels[i], self.channels[i+1], kernel_size=structure[i], stride=structure[i]),
+        nn.ConvTranspose2d(
+          self.channels[i],
+          self.channels[i + 1],
+          kernel_size=structure[i],
+          stride=structure[i]
+        ),
       ) for i in range(1, len(structure))
     ]
 
     outputLayer = [
       nn.Sequential(
-        nn.Conv2d(self.channels[-1] * 2, self.channels[-1], kernel_size=3, padding=1),
+        nn.Conv2d(
+          self.channels[-1] * 2,
+          self.channels[-1],
+          kernel_size=3,
+          padding=1
+        ),
         nn.ReLU(),
-        nn.Conv2d(self.channels[-1], self.channels[-1], kernel_size=3, padding=1),
+        nn.Conv2d(
+          self.channels[-1],
+          self.channels[-1],
+          kernel_size=3,
+          padding=1
+        ),
         nn.ReLU(),
-        nn.Conv2d(self.channels[-1], 1, kernel_size=3, padding=1),
+        nn.Conv2d(
+          self.channels[-1],
+          1,
+          kernel_size=3,
+          padding=1
+        ),
         nn.BatchNorm2d(1),
         nn.Sigmoid(),
       )
     ]
 
-    self.model = nn.ModuleList(inLayer + contractor + bottleneck + expander + outputLayer)
+    self.model = nn.ModuleList(
+        inLayer +
+        contractor +
+        bottleneck +
+        expander +
+        outputLayer)
 
+  def forward(self, x: torch.Tensor) -> torch.Tensor:
+    """
+    Performs a forward pass through the UNet model.
 
-  def forward(self, x):
+    Args:
+    - x (torch.Tensor): The input tensor.
+
+    Returns:
+    - outputTensor (torch.Tensor): The output tensor.
+
+    """
     inputTensor = x
     skipConnections = []
     for depth, layer in enumerate(self.model):
@@ -89,4 +172,3 @@ class UNet(nn.Module):
         inputTensor = cat((skipConnections.pop(), inputTensor), 1)
 
     return outputTensor
-    
