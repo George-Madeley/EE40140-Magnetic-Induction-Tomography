@@ -1,5 +1,4 @@
 import os
-from pandas import DataFrame
 import torch
 from .Encoder import Encoder
 from .Decoder import Decoder

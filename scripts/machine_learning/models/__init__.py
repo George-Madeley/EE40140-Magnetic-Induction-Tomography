@@ -1,13 +1,11 @@
 from .IModel import IModel
 
-from .classification import DecisionTree
-from .classification import KNearestNeighbors
-from .classification import NearestCentroid
-from .classification import RandomForest
-from .classification import StochasticGradientDescent
-from .classification import SupportVectorMachine
-
-
+from .classification import DT
+from .classification import KNN
+from .classification import NC
+from .classification import RF
+from .classification import SGD
+from .classification import SVM
 
 from .generation import GAN
 from .generation import VAE

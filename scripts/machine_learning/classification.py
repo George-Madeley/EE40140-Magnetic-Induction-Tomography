@@ -4,7 +4,7 @@ from typing import Literal
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import confusion_matrix
 
-from models import *
+from models.classification import *
 
 import pandas as pd
 
@@ -43,13 +43,12 @@ def runModels():
     for noise in [True, False]:
       print(f'Running models with noise={noise}')
       models = [
-        KNearestNeighbors(noise=noise),
-        DecisionTree(noise=noise),
-        NearestCentroid(noise=noise),
-        RandomForest(noise=noise),
-        ClassificationNeuralNetwork(noise=noise),
-        StochasticGradientDescent(noise=noise),
-        SupportVectorMachine(noise=noise),
+        KNN(noise=noise),
+        DT(noise=noise),
+        NC(noise=noise),
+        RF(noise=noise),
+        SGD(noise=noise),
+        SVM(noise=noise),
       ]
       for model in models:
         scoring = {

@@ -1,6 +1,6 @@
-from .DecisionTree import DecisionTree
-from .KNearestNeighbors import KNearestNeighbors
-from .NearestCentroid import NearestCentroid
-from .RandomForest import RandomForest
-from .SupportVectorMachine import SupportVectorMachine
-from .StochasticGradientDescent import StochasticGradientDescent
+from .DecisionTree import DecisionTree as DT
+from .KNearestNeighbors import KNearestNeighbors as KNN
+from .NearestCentroid import NearestCentroid as NC
+from .RandomForest import RandomForest as RF
+from .SupportVectorMachine import SupportVectorMachine as SVM
+from .StochasticGradientDescent import StochasticGradientDescent as SGD

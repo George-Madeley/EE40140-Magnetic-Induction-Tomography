@@ -1,11 +1,12 @@
 import os
 from random import choice
 from string import ascii_letters
-from typing import Literal
+from typing import List, Literal, Optional, Tuple, Union
 
 from matplotlib import pyplot as plt
 from pandas import DataFrame, concat
 from torch import nn
+from torch.utils.data import DataLoader
 import numpy as np
 import torch
 
@@ -16,32 +17,57 @@ from ..IModel import IModel
 
 class IGeneration(IModel):
   def __init__(
-      self,
-      labelName: Literal['shape', 'sample'] = 'shape',
-      noise: bool = True,
-      oneHotEncode: bool = False,
-      downScaleFactor: int = 8,
-      **kwargs
-  ):
+    self,
+    labelName: Literal['shape', 'sample'] = 'shape',
+    noise: bool = True,
+    oneHotEncode: bool = False,
+    downScaleFactor: int = 8,
+    **kwargs
+  ) -> None:
+    """
+    Initializes an instance of the IGeneration class.
+
+    Args:
+      labelName (Literal['shape', 'sample'], optional): The label name. Defaults to 'shape'.
+      noise (bool, optional): Whether to include noise. Defaults to True.
+      oneHotEncode (bool, optional): Whether to use one-hot encoding. Defaults to False.
+      downScaleFactor (int, optional): The downscale factor. Defaults to 8.
+      **kwargs: Additional keyword arguments.
+
+    Keyword Args:
+      perPixelLoss (bool, optional): Whether to use per-pixel loss. Defaults to False.
+      batchSize (int, optional): The batch size. Defaults to 45.
+      learningRate (float, optional): The learning rate. Defaults to 0.0001.
+      maxEpoch (int, optional): The maximum number of epochs. Defaults to 100.
+      loadFile (str, optional): The file to load. Defaults to None.
+      toSave (bool, optional): Whether to save the model. Defaults to False.
+      name (str, optional): The name of the instance. Defaults to the class name.
+
+    Raises:
+      None
+
+    Returns:
+      None
+    """
     super().__init__()
 
-    self.labelName = labelName
-    self.noise = noise
-    self.oneHotEncode = oneHotEncode
-    self.downScaleFactor = downScaleFactor
+    self.labelName: Literal['shape', 'sample'] = labelName
+    self.noise: bool = noise
+    self.oneHotEncode: bool = oneHotEncode
+    self.downScaleFactor: int = downScaleFactor
 
-    self.perPixelLoss = kwargs.get('perPixelLoss', False)
+    self.perPixelLoss: bool = kwargs.get('perPixelLoss', False)
 
-    self.batchSize = kwargs.get('batchSize', 45)
-    self.learningRate = kwargs.get('learningRate', 0.0001)
-    self.maxEpoch = kwargs.get('maxEpoch', 100)
+    self.batchSize: int = kwargs.get('batchSize', 45)
+    self.learningRate: float = kwargs.get('learningRate', 0.0001)
+    self.maxEpoch: int = kwargs.get('maxEpoch', 100)
 
-    self.loadFile = kwargs.get('loadFile', None)
-    self.toSave = kwargs.get('toSave', False)
+    self.loadFile: Optional[str] = kwargs.get('loadFile', None)
+    self.toSave: bool = kwargs.get('toSave', False)
 
-    self.name = kwargs.get("name", self.__class__.__name__)
+    self.name: str = kwargs.get("name", self.__class__.__name__)
 
-    self.device = ""
+    self.device: str = ""
     if torch.cuda.is_available():
       self.device = torch.device("cuda")
     else:
@@ -50,10 +76,10 @@ class IGeneration(IModel):
 
   def saveModel(self, uniqueID: str) -> None:
     """
-    Save the model to the specified path.
+    Saves the model's state dictionary to a file.
 
     Args:
-      path (str): The path to save the model.
+      uniqueID (str): A unique identifier for the model.
 
     Returns:
       None
@@ -68,13 +94,10 @@ class IGeneration(IModel):
 
   def loadModel(self) -> None:
     """
-    Load the model from the specified path.
+    Loads the model from a file.
 
-    Args:
-      path (str): The path to load the model from.
-
-    Returns:
-      None
+    Raises:
+      FileExistsError: If the load file provided does not match the model name.
     """
     if self.loadFile:
       if self.name not in self.loadFile:
@@ -93,6 +116,19 @@ class IGeneration(IModel):
     fixedIndeces: list[int] = None,
     metrics: list = None
   ) -> None:
+    """
+    Run the generation model.
+
+    Args:
+      df_train (DataFrame): The training dataset.
+      df_test (DataFrame): The testing dataset.
+      df_val (DataFrame): The validation dataset.
+      fixedIndeces (list[int], optional): List of indices of fixed images. Defaults to None.
+      metrics (list, optional): List of metrics to calculate. Defaults to None.
+
+    Returns:
+      None
+    """
 
     # Get the values and labels
     trainLoader = self.getLoader(df_train)
@@ -171,27 +207,63 @@ class IGeneration(IModel):
 
     self.validate(metrics, validLoader, uniqueID)
 
-  def plotFixedImages(self, fixedIndeces, validLoader, fixedRealImages, imgDir, epoch):
-      fixedSignalSamples = validLoader.dataset.tensors[1][fixedIndeces].to(self.device)
-      fixedGeneratedImages = self.predict(fixedSignalSamples)
-      fixedErrorImages = self.calculatePerPixelLoss(fixedRealImages, fixedGeneratedImages)
-      self.plotImages(
-        imgDir,
-        fixedGeneratedImages,
-        f'epoch_{str(epoch).zfill(3)}.png',
-        subtitle=f'Epoch {epoch}'
-      )
-      self.plotImages(
-        imgDir,
-        fixedErrorImages,
-        f'error_epoch_{str(epoch).zfill(3)}.png',
-        subtitle=f'Error at Epoch {epoch}',
-        palette='viridis',
-        colorBar=True,
-        colorRange=(-1, 1)
-      )
+  def plotFixedImages(
+    self,
+    fixedIndeces: List[int],
+    validLoader: DataLoader,
+    fixedRealImages: torch.Tensor,
+    imgDir: str,
+    epoch: int
+  ) -> None:
+    """
+    Plots fixed images generated by the model and calculates the per-pixel loss.
 
-  def validate(self, metrics, validLoader, uniqueID):
+    Args:
+      fixedIndeces (list): List of indices of fixed images.
+      validLoader (torch.utils.data.DataLoader): DataLoader for the validation dataset.
+      fixedRealImages (torch.Tensor): Tensor containing the real fixed images.
+      imgDir (str): Directory to save the generated images.
+      epoch (int): Current epoch number.
+
+    Returns:
+      None
+    """
+    fixedSignalSamples = validLoader.dataset.tensors[1][fixedIndeces].to(self.device)
+    fixedGeneratedImages = self.predict(fixedSignalSamples)
+    fixedErrorImages = self.calculatePerPixelLoss(fixedRealImages, fixedGeneratedImages)
+    self.plotImages(
+      imgDir,
+      fixedGeneratedImages,
+      f'epoch_{str(epoch).zfill(3)}.png',
+      subtitle=f'Epoch {epoch}'
+    )
+    self.plotImages(
+      imgDir,
+      fixedErrorImages,
+      f'error_epoch_{str(epoch).zfill(3)}.png',
+      subtitle=f'Error at Epoch {epoch}',
+      palette='viridis',
+      colorBar=True,
+      colorRange=(-1, 1)
+    )
+
+  def validate(
+    self,
+    metrics: list,
+    validLoader: DataLoader,
+    uniqueID: str
+  ) -> None:
+    """
+    Validates the model using the provided validation data loader and calculates the metrics.
+
+    Args:
+      metrics (list): A list of metrics to calculate.
+      validLoader (DataLoader): The validation data loader.
+      uniqueID (str): A unique identifier for the validation results.
+
+    Returns:
+      None
+    """
     df_val_results = DataFrame()
 
     for batch in validLoader:
@@ -203,7 +275,6 @@ class IGeneration(IModel):
 
       losses = self.singleScore(metrics, realImagesSamples, generatedImageSamples, signalLabels)
 
-    
       labelIndex = torch.argmax(signalLabels, dim=1)
       actualLabels = [self.labelNames[i] for i in labelIndex]
       losses['Label'] = actualLabels
@@ -241,22 +312,25 @@ class IGeneration(IModel):
   def score(
       self,
       scoring: list,
-      actual,
-      predicted,
-      labels,
+      actual: torch.Tensor,
+      predicted: torch.Tensor,
+      labels: torch.Tensor,
       runPerPixelLoss: bool = True,
       dim: tuple = (1, 2, 3)
-    ):
+    ) -> dict:
     """
-    Calculate the scores for different loss functions and update the scoring dictionary.
+    Calculate the scores for the predicted values compared to the actual values.
 
     Args:
-      scoring (dict): A dictionary containing the scores for different loss functions.
-      actual: The actual values.
-      predicted: The predicted values.
+      scoring (list): List of scoring metrics to calculate.
+      actual (torch.Tensor): The actual values.
+      predicted (torch.Tensor): The predicted values.
+      labels (torch.Tensor): The labels.
+      runPerPixelLoss (bool, optional): Whether to run per-pixel loss calculation. Defaults to True.
+      dim (tuple, optional): The dimensions to calculate the per-pixel loss. Defaults to (1, 2, 3).
 
     Returns:
-      dict: The updated scoring dictionary.
+      dict: A dictionary containing the scores for each metric.
     """
     newScoring = {k: 0 for k in scoring}
 
@@ -370,17 +444,26 @@ class IGeneration(IModel):
 
     return newScoring
   
-  def singleScore(self, scoring: list, actual, predicted, labels, runPerPixelLoss: bool = True):
+  def singleScore(
+    self,
+    scoring: list,
+    actual: torch.Tensor,
+    predicted: torch.Tensor,
+    labels: torch.Tensor,
+    runPerPixelLoss: bool = True
+  ) -> dict:
     """
-    Calculate the scores for different loss functions and update the scoring dictionary.
+    Calculate the scores for each individual sample.
 
     Args:
-      scoring (dict): A dictionary containing the scores for different loss functions.
-      actual: The actual values.
-      predicted: The predicted values.
+      scoring (list): List of scoring metrics to calculate.
+      actual (torch.Tensor): The actual values.
+      predicted (torch.Tensor): The predicted values.
+      labels (torch.Tensor): The labels.
+      runPerPixelLoss (bool, optional): Whether to run per-pixel loss calculation. Defaults to True.
 
     Returns:
-      dict: The updated scoring dictionary.
+      dict: A dictionary containing the scores for each metric.
     """
     newScoring = {k: [] for k in scoring}
 
@@ -398,16 +481,17 @@ class IGeneration(IModel):
 
     return newScoring
   
-  def calculatePerPixelLoss(self, actual, predicted):
+  def calculatePerPixelLoss(self, actual: torch.Tensor, predicted: torch.Tensor) -> torch.Tensor:
     """
-    Calculate the per pixel loss.
+    Calculates the per-pixel loss between the actual and predicted images.
 
     Args:
-      actual: The actual values.
-      predicted: The predicted values.
+      actual (torch.Tensor): The actual image tensor.
+      predicted (torch.Tensor): The predicted image tensor.
 
     Returns:
-      dict: The per pixel loss.
+      torch.Tensor: The per-pixel loss tensor.
+
     """
     # the actual images are made up of 0.01 and 0.99 values. Replace the 0.01
     # values with 0 and the 0.99 values with 1
@@ -428,26 +512,28 @@ class IGeneration(IModel):
   def plotImages(
     self,
     imgDir: str,
-    fixedImageSamples,
+    fixedImageSamples: Union[torch.Tensor, np.ndarray],
     fileName: str,
     subtitle: str,
-    labels: list[str] = None,
+    labels: Optional[List[str]] = None,
     palette: str = 'gray',
     colorBar: bool = False,
-    colorRange: tuple = (0, 1),
+    colorRange: Tuple[int, int] = (0, 1),
     numCols: int = 2
-  ):
+  ) -> None:
     """
-    Plot and save a grid of images.
+    Plot and save images.
 
     Args:
-      imgDir (str): The directory where the image will be saved.
-      fixedImageSamples: The fixed image samples to be plotted.
-      fileName (str): The name of the file to be saved.
-      subtitle (str): The title of the plot.
-
-    Returns:
-      None
+      imgDir (str): Directory to save the images.
+      fixedImageSamples (Union[torch.Tensor, np.ndarray]): The fixed image samples to plot. It can be a tensor or a numpy array.
+      fileName (str): Name of the file to save the plot.
+      subtitle (str): Subtitle for the plot.
+      labels (Optional[List[str]], optional): Labels for each image. Defaults to None.
+      palette (str, optional): Color palette for the images. Defaults to 'gray'.
+      colorBar (bool, optional): Whether to add a color bar to the plot. Defaults to False.
+      colorRange (Tuple[int, int], optional): Range of values for the color bar. Defaults to (0, 1).
+      numCols (int, optional): Number of columns in the plot. Defaults to 2.
     """
     # check if fixedImageSamples is a tensor
     if not torch.is_tensor(fixedImageSamples):
@@ -466,7 +552,6 @@ class IGeneration(IModel):
 
     fixedImageSamples = fixedImageSamples.clone()
     fixedImageSamples = fixedImageSamples[:, :, :, imgMargin:imgMargin + imgH]
-
 
     if numRows == 1 and numCols == 1:
       image = fixedImageSamples[0][0]
@@ -501,7 +586,7 @@ class IGeneration(IModel):
         image = fixedImageSamples[0][0]
         image = image.cpu()
         cbar = fig.colorbar(
-          axs[0, 0].imshow(image, cmap=palette, vmin=colorRange[0], vmax=colorRange[1]), 
+          axs[0, 0].imshow(image, cmap=palette, vmin=colorRange[0], vmax=colorRange[1]),
           cax=cbar_ax,
           orientation='horizontal',
           ticks=[colorRange[0], 0, colorRange[1]],
@@ -518,56 +603,59 @@ class IGeneration(IModel):
     plt.close()
 
   def getImages(
-      self,
-      df: DataFrame,
-      downScaleFactor: int = 1
-  ):
+    self,
+    df: DataFrame,
+    downScaleFactor: int = 1
+  ) -> torch.Tensor:
     """
-    Get the images from the dataframe
+    Retrieves and processes images from the given DataFrame.
 
-    :param df: dataframe
+    Args:
+      df (DataFrame): The DataFrame containing image information.
+      downScaleFactor (int, optional): The factor by which to downscale the images. Defaults to 1.
 
-    :return: images
+    Returns:
+      torch.Tensor: A tensor containing the processed images.
     """
     # Define the original width and height
-    originalWidth = 640
-    originalHeight = 480
+    originalWidth: int = 640
+    originalHeight: int = 480
 
     # Define the new width and height
-    newWidth = originalWidth // downScaleFactor
-    newHeight = originalHeight // downScaleFactor
+    newWidth: int = originalWidth // downScaleFactor
+    newHeight: int = originalHeight // downScaleFactor
 
-    outputImages = torch.zeros((len(df), 1, newHeight, newWidth))
+    outputImages: torch.Tensor = torch.zeros((len(df), 1, newHeight, newWidth))
 
     for i in range(len(df)):
       row = df.iloc[i]
-        # Get the filename
-      imageFilename = row['cc_filename']
+      # Get the filename
+      imageFilename: str = row['cc_filename']
 
-      imageFilePath = os.path.join(
-          'images',
-          'processed',
-          f'{newHeight}x{newWidth}',
-          imageFilename)
+      imageFilePath: str = os.path.join(
+        'images',
+        'processed',
+        f'{newHeight}x{newWidth}',
+        imageFilename)
 
       # Read the .png file
-      image = plt.imread(imageFilePath)
+      image: np.ndarray = plt.imread(imageFilePath)
       # Average the first three channels
       image = np.mean(image[:, :, :3], axis=2)
 
       # Find all the zero values and replace them with 0.01
-      zero_values = image == 0
+      zero_values: np.ndarray = image == 0
       image[zero_values] = 0.01
 
-      # Find all the one values nd replace them with 0.99
-      one_values = image == 1
+      # Find all the one values and replace them with 0.99
+      one_values: np.ndarray = image == 1
       image[one_values] = 0.99
 
       if image.max() == image.min():
         image = np.ones((newHeight, newWidth)) * 0.99
 
       # Convert the image to a PyTorch tensor
-      image_tensor = torch.from_numpy(image).float()
+      image_tensor: torch.Tensor = torch.from_numpy(image).float()
 
       # Reshape the tensor to the expected input shape
       image_tensor = image_tensor.view(1, newHeight, newWidth)
@@ -577,9 +665,19 @@ class IGeneration(IModel):
 
     return outputImages
 
-  def getLoader(self, df: DataFrame):
+  def getLoader(self, df: DataFrame) -> DataLoader:
     """
-    Get the data loader
+    Returns a data loader for the given DataFrame.
+
+    Args:
+      df (DataFrame): The input DataFrame.
+
+    Returns:
+      DataLoader: A PyTorch DataLoader object containing the data.
+
+    Raises:
+      ValueError: If `oneHotEncode` is False and `perPixelLoss` is True.
+
     """
     values, labels = self.getValuesAndLabels(df)
     indicies = self.getIndices(df)
@@ -596,7 +694,7 @@ class IGeneration(IModel):
     dataSet = torch.utils.data.TensorDataset(images, values, labels, indicies)
 
     dataLoader = torch.utils.data.DataLoader(
-        dataSet, batch_size=self.batchSize, shuffle=False
+      dataSet, batch_size=self.batchSize, shuffle=False
     )
 
     return dataLoader
