@@ -4,26 +4,27 @@ from torch import Tensor
 
 class ConvolutionalGenerator(nn.Module):
   """
-  Generator class for generating images using a neural network.
+  Convolutional Generator model for generating images.
 
   Args:
-      None
+    inputSize (int): Size of the input tensor.
+    width (int): Width of the generated image.
+    height (int): Height of the generated image.
+    structure (list): List of integers representing the structure of the generator.
 
   Attributes:
-      model (nn.Sequential): Sequential model consisting of linear layers and activation functions.
-
-  Methods:
-      forward(x: Tensor) -> Tensor: Forward pass of the generator network.
-
+    width (int): Width of the generated image.
+    height (int): Height of the generated image.
+    model (nn.ModuleList): List of modules representing the generator model.
   """
 
   def __init__(
-      self,
-      inputSize: int,
-      width: int,
-      height: int,
-      structure: list,
-    ):
+    self,
+    inputSize: int,
+    width: int,
+    height: int,
+    structure: list,
+  ):
     super().__init__()
 
     structure = [1] + structure
@@ -59,10 +60,10 @@ class ConvolutionalGenerator(nn.Module):
     Forward pass of the Generator model.
 
     Args:
-        x (Tensor): Input tensor.
+      x (Tensor): Input tensor.
 
     Returns:
-        Tensor: Output tensor after passing through the model.
+      Tensor: Output tensor after passing through the model.
     """
     inputTensor = x
     for layer in self.model:

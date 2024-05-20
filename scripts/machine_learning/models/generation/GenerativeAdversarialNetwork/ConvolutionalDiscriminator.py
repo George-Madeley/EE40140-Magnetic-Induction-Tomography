@@ -1,5 +1,6 @@
 from torch import nn
 from torch import Tensor
+from typing import List
 
 
 class ConvolutionalDiscriminator(nn.Module):
@@ -10,26 +11,22 @@ class ConvolutionalDiscriminator(nn.Module):
   generation. It consists of several convolutional layers followed by batch
   normalization and leaky ReLU activation. The final layer uses sigmoid
   activation to produce the discriminator output.
-
-  Args:
-      None
-
-  Attributes:
-      model (nn.Sequential):  The sequential model that defines the
-      architecture of the discriminator.
-
-  Methods:
-      forward(x: Tensor) -> Tensor:   Performs forward pass through the
-      discriminator model.
-
   """
 
   def __init__(
-      self,
-      width: int,
-      height: int,
-      structure: list[int],
-    ):
+    self,
+    width: int,
+    height: int,
+    structure: List[int],
+  ) -> None:
+    """
+    Initializes the ConvolutionalDiscriminator class.
+
+    Args:
+      width (int): The width of the input image.
+      height (int): The height of the input image.
+      structure (List[int]): A list specifying the structure of the discriminator's hidden layers.
+    """
     super().__init__()
 
     structure = [1] + structure + [1]
@@ -58,10 +55,10 @@ class ConvolutionalDiscriminator(nn.Module):
     Performs forward pass through the discriminator model.
 
     Args:
-        x (Tensor): Input tensor to the discriminator.
+      x (Tensor): Input tensor to the discriminator.
 
     Returns:
-        Tensor: Output tensor from the discriminator.
+      Tensor: Output tensor from the discriminator.
 
     """
     inputTensor = x

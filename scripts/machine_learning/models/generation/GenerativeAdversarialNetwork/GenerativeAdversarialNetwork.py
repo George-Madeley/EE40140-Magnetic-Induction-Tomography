@@ -2,24 +2,41 @@ import os
 import torch
 from torch import nn
 from torch.optim import Adam
-from pandas import DataFrame
-
 from .FeedforwardDiscriminator import FeedforwardDiscriminator
 from .FeedforwardGenerator import FeedforwardGenerator
 from .ConvolutionalDiscriminator import ConvolutionalDiscriminator
 from .ConvolutionalGenerator import ConvolutionalGenerator
 from ..IGeneration import IGeneration
+from torch.utils.data import DataLoader
 
 
 class GenerativeAdversarialNetwork(IGeneration):
-  def __init__(self, structure, convD: bool = False, convG: bool = False, **kwargs):
-    """
-    Initialize a GenerativeAdversarialNetwork object.
+  """
+  A class representing a Generative Adversarial Network (GAN) model.
 
-    Args:
-        labelName (Literal['shape', 'sample'], optional): The name of the label to predict. Defaults to 'shape'.
-        noise (bool, optional): Whether to add noise to the data. Defaults to False.
-    """
+  Args:
+    structure (dict): The structure of the discriminator and generator networks.
+    convD (bool, optional): Whether to use a convolutional discriminator. Defaults to False.
+    convG (bool, optional): Whether to use a convolutional generator. Defaults to False.
+    **kwargs: Additional keyword arguments.
+
+  Attributes:
+    discriminator (nn.Module): The discriminator network.
+    generator (nn.Module): The generator network.
+    optimizerDiscriminator (torch.optim.Adam): The optimizer for the discriminator.
+    optimizerGenerator (torch.optim.Adam): The optimizer for the generator.
+    gLossFunc (nn.MSELoss): The loss function for the generator.
+    dLossFunc (nn.BCELoss): The loss function for the discriminator.
+    modelNames (list): The names of the models.
+
+  """
+
+  def __init__(
+          self,
+          structure: dict,
+          convD: bool = False,
+          convG: bool = False,
+          **kwargs):
     super().__init__(**kwargs)
 
     discriminatorStructure = structure.get('discriminator')
@@ -62,40 +79,42 @@ class GenerativeAdversarialNetwork(IGeneration):
 
     self.modelNames = ['D', 'G']
 
-  def train(
-    self,
-    trainLoader,
-    metrics: list[str]
-  ) -> None:
+  def train(self, trainLoader: DataLoader, metrics: list) -> tuple:
     """
-    Train the generative adversarial network model using the provided DataFrame.
+    Train the Generative Adversarial Network model.
 
     Args:
-        df (DataFrame): The input DataFrame containing the training data.
+      trainLoader (DataLoader): The data loader for training data.
+      metrics (list): The list of metrics to evaluate.
 
     Returns:
-        None
-    """
+      tuple: A tuple containing the loss and losses.
 
+    """
     trainLoaderLen = len(trainLoader)
-    
+
     for batch in trainLoader:
       realImageSamples, signalSamples, signalLabels, _ = batch
       # Create and label the real samples, the generated samples, and the
       # latent space samples. Send them to the chosen device i.e., CPU or GPU.
       realImageSamples = realImageSamples.to(device=self.device)
-      realImageSampleLabels = torch.ones((self.batchSize, 1)).to(device=self.device)
+      realImageSampleLabels = torch.ones(
+          (self.batchSize, 1)).to(
+          device=self.device)
       signalSamples = signalSamples.to(device=self.device)
       generatedSamples = self.generator(signalSamples)
-      generatedSampleLabels = torch.zeros((self.batchSize, 1)).to(device=self.device)
+      generatedSampleLabels = torch.zeros(
+          (self.batchSize, 1)).to(
+          device=self.device)
       allImageSamples = torch.cat((realImageSamples, generatedSamples))
-      allImageSampleLabels = torch.cat((realImageSampleLabels, generatedSampleLabels))
+      allImageSampleLabels = torch.cat(
+          (realImageSampleLabels, generatedSampleLabels))
 
       # Training the discriminator
       self.discriminator.zero_grad()
       outputDiscriminator = self.discriminator(allImageSamples)
       lossDiscriminator = self.dLossFunc(
-          outputDiscriminator, allImageSampleLabels
+        outputDiscriminator, allImageSampleLabels
       )
       lossDiscriminator.backward()
       self.optimizerDiscriminator.step()
@@ -104,16 +123,29 @@ class GenerativeAdversarialNetwork(IGeneration):
       self.generator.zero_grad()
       generatedSamples = self.generator(signalSamples)
       lossGenerator = self.gLossFunc(
-          generatedSamples, realImageSamples
+        generatedSamples, realImageSamples
       )
       lossGenerator.backward()
       self.optimizerGenerator.step()
 
-      discriminatorLosses = super().score(metrics, allImageSampleLabels, outputDiscriminator, signalLabels, runPerPixelLoss=False)
-      generatorLosses = super().score(metrics, realImageSamples, generatedSamples, signalLabels)
+      discriminatorLosses = super().score(
+          metrics,
+          allImageSampleLabels,
+          outputDiscriminator,
+          signalLabels,
+          runPerPixelLoss=False)
+      generatorLosses = super().score(
+          metrics,
+          realImageSamples,
+          generatedSamples,
+          signalLabels)
 
-    discriminatorLosses = {f'D {k}': v / trainLoaderLen for k, v in discriminatorLosses.items()}
-    generatorLosses = {f'G {k}': v / trainLoaderLen for k, v in generatorLosses.items()}
+    discriminatorLosses = {
+        f'D {k}': v / trainLoaderLen for k,
+        v in discriminatorLosses.items()}
+    generatorLosses = {
+        f'G {k}': v / trainLoaderLen for k,
+        v in generatorLosses.items()}
 
     loss = lossGenerator.item()
 
@@ -124,19 +156,17 @@ class GenerativeAdversarialNetwork(IGeneration):
 
     return loss, losses
 
-  def test(
-      self,
-      testLoader,
-      metrics: list[str],
-    ) -> float:
+  def test(self, testLoader: DataLoader, metrics: list) -> dict:
     """
-    Test the generative adversarial network model on the given DataFrame and return the accuracy score.
+    Test the Generative Adversarial Network model.
 
-    Parameters:
-    - df (DataFrame): The DataFrame containing the test data.
+    Args:
+      testLoader (DataLoader): The data loader for test data.
+      metrics (list): The list of metrics to evaluate.
 
     Returns:
-    - float: The accuracy score of the generative adversarial network model on the test data.
+      dict: The losses.
+
     """
     testLoaderLen = len(testLoader)
 
@@ -148,22 +178,37 @@ class GenerativeAdversarialNetwork(IGeneration):
       realSampleLabels = torch.ones((self.batchSize, 1)).to(device=self.device)
       signalSamples = signalSamples.to(device=self.device)
       generatedSamples = self.generator(signalSamples)
-      generatedSampleLabels = torch.zeros((self.batchSize, 1)).to(device=self.device)
+      generatedSampleLabels = torch.zeros(
+          (self.batchSize, 1)).to(
+          device=self.device)
       allSamples = torch.cat((realImageSamples, generatedSamples))
       allSampleLabels = torch.cat((realSampleLabels, generatedSampleLabels))
 
       # Test the discriminator
       self.discriminator.zero_grad()
       outputDiscriminator = self.discriminator(allSamples)
-      discriminatorLosses = super().score(metrics, allSampleLabels, outputDiscriminator, signalLabels, runPerPixelLoss=False)
+      discriminatorLosses = super().score(
+          metrics,
+          allSampleLabels,
+          outputDiscriminator,
+          signalLabels,
+          runPerPixelLoss=False)
 
       # Test the generator
       self.generator.zero_grad()
       generatedSamples = self.generator(signalSamples)
-      generatorLosses = super().score(metrics, realImageSamples, generatedSamples, signalLabels)
+      generatorLosses = super().score(
+          metrics,
+          realImageSamples,
+          generatedSamples,
+          signalLabels)
 
-    discriminatorLosses = {f'D {k}': v / testLoaderLen for k, v in discriminatorLosses.items()}
-    generatorLosses = {f'G {k}': v / testLoaderLen for k, v in generatorLosses.items()}
+    discriminatorLosses = {
+        f'D {k}': v / testLoaderLen for k,
+        v in discriminatorLosses.items()}
+    generatorLosses = {
+        f'G {k}': v / testLoaderLen for k,
+        v in generatorLosses.items()}
 
     losses = {
       **discriminatorLosses,
@@ -172,19 +217,29 @@ class GenerativeAdversarialNetwork(IGeneration):
 
     return losses
 
-  def predict(self, signalSamples) -> None:
+  def predict(self, signalSamples) -> torch.Tensor:
     """
-    Predict the labels of the test data
+    Generate images using the Generative Adversarial Network model.
 
-    :param predict_df: prediction dataframe
+    Args:
+      signalSamples: The input signal samples.
 
-    :return: predictions
+    Returns:
+      torch.Tensor: The generated images.
+
     """
     generatedImages = self.generator(signalSamples)
     generatedImages = generatedImages.detach().cpu()
     return generatedImages
 
-  def saveModel(self, uniqueID: str) -> None:
+  def saveModel(self, uniqueID: str):
+    """
+    Save the Generative Adversarial Network model.
+
+    Args:
+      uniqueID (str): The unique ID for the saved model.
+
+    """
     model_save_dir = os.path.join('models')
     os.makedirs(model_save_dir, exist_ok=True)
 
@@ -194,11 +249,18 @@ class GenerativeAdversarialNetwork(IGeneration):
     save_path = os.path.join(model_save_dir, f'{self.name} D - {uniqueID}.pt')
     torch.save(self.discriminator.state_dict(), save_path)
 
-  def loadModel(self) -> None:
+  def loadModel(self):
+    """
+    Load the Generative Adversarial Network model.
+
+    Raises:
+      FileExistsError: If the load file provided does not match the model.
+
+    """
     if self.loadFile:
 
       for loadFile in self.loadFile:
-      
+
         if f'{self.name} G' in loadFile:
           load_path = os.path.join('models', f'{loadFile}.pt')
           self.generator.load_state_dict(torch.load(load_path))
@@ -206,4 +268,5 @@ class GenerativeAdversarialNetwork(IGeneration):
           load_path = os.path.join('models', f'{loadFile}.pt')
           self.discriminator.load_state_dict(torch.load(load_path))
         else:
-          raise FileExistsError(f'The load file provided {loadFile} does not match the model {self.name}')
+          raise FileExistsError(
+            f'The load file provided {loadFile} does not match the model {self.name}')
