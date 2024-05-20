@@ -19,17 +19,32 @@ def MIT():
   args = getArgs()
   model = getGenerator(**args)
 
-  # data = readSensor()
+  num_frames = args.get('--numFrames', 1)
+  frequency = args.get('--frequency', 20000)
+  gain = args.get('--gain', 7)
 
-  fig = plt.figure()
-  ax1 = fig.add_subplot(1, 2, 1)
-  ax2 = fig.add_subplot(1, 2, 2)
+  print(f'MIT Operating at {frequency}Hz and gain {gain} with {num_frames} frames.')
+  print("Reading background signal...")
+  bb_data = readSensor(
+    frequency=frequency,
+    gain=gain,
+    num_frames=num_frames
+  )
+  print("Reading coil signal...")
+
+  fig, axs = plt.subplots(1, 2)
+  ax1, ax2 = axs
 
   def animate(i):
     '''
     Animation function.
     '''
-    cc_data, bb_data = getDataFromFile(i)
+    cc_data = readSensor(
+      frequency=frequency,
+      gain=gain,
+      num_frames=num_frames
+    )
+
     # concatenate the data
     data = np.concatenate((cc_data, bb_data)).astype(np.float32)
 
@@ -42,13 +57,16 @@ def MIT():
     # generate the image
     generated_image = model.predict(data)
     generated_image = generated_image.squeeze(0).squeeze(0).detach().cpu().numpy()
-
+    height, width = generated_image.shape
+    diff = (width - height) // 2
+    # remove horizontal padding
+    generated_image = generated_image[:, diff:-diff]
 
     # plot cc_data and bb_data on the first axis then the generated image on the
     # second axis
     ax1.clear()
-    ax1.plot(cc_data, label='cc_data')
-    ax1.plot(bb_data, label='bb_data')
+    ax1.plot(bb_data, label='bb_data', color='darkblue', alpha=0.3)
+    ax1.plot(cc_data, label='cc_data', color='darkblue')
     ax1.legend()
     ax1.set_title('Signal')
     ax1.set_xlabel('Coil')
@@ -72,9 +90,44 @@ def getArgs():
     dict: Dictionary containing the arguments of the script.
   '''
 
+  args_types = {
+    '--generator': str,
+    '--labelName': str,
+    '--noise': bool,
+    '--downScaleFactor': int,
+    '--batchSize': int,
+    '--learningRate': float,
+    '--maxEpoch': int,
+    '--perPixelLoss': bool,
+    '--oneHotEncode': bool,
+    '--toSave': bool,
+    '--numFrames': int,
+    '--frequency': int,
+    '--gain': int,
+  }
+
+  arg_longs = {
+    '-g': '--generator',
+    '-ln': '--labelName',
+    '-n': '--noise',
+    '-dsf': '--downScaleFactor',
+    '-bs': '--batchSize',
+    '-lr': '--learningRate',
+    '-me': '--maxEpoch',
+    '-ppl': '--perPixelLoss',
+    '-ohe': '--oneHotEncode',
+    '-ts': '--toSave',
+    '-nf': '--numFrames',
+    '-f': '--frequency',
+  }
+
   argv = sys.argv[1:]
   if len(argv) == 0:
     return {}
+  
+  # if the first element is '-m', remove it
+  if argv[0] == '-m':
+    argv = argv[1:]
   
   if len(argv) % 2 != 0:
     raise ValueError("Invalid number of arguments")
@@ -82,10 +135,29 @@ def getArgs():
   # get every every even index and every odd index
   args = {argv[i]: argv[i + 1] for i in range(0, len(argv), 2)}
 
-  # check that all keys start with '--' or '-'
-  for key in args.keys():
+  # check that all keys start with '--' or '-'. To do this, copy the keys to a
+  # list and iterate through the list. If the key does not start with '--' or '-'
+  # raise a ValueError.
+  keys = list(args.keys())
+  for key in keys:
     if not key.startswith('--') and not key.startswith('-'):
       raise ValueError(f'Invalid argument key: {key}')
+    
+    if key not in args_types and key not in arg_longs:
+      raise ValueError(f'Invalid argument key: {key}')
+    
+    if key.startswith('-') and not key.startswith('--'):
+      args[arg_longs[key]] = args.pop(key)
+
+  # check that all values are of the correct type
+  for key, value in args.items():
+    if key not in args_types:
+      continue
+    
+    try:
+      args[key] = args_types[key](value)
+    except ValueError as e:
+      raise ValueError(f"Invalid value for {key}: {value}")
 
   return args
 
